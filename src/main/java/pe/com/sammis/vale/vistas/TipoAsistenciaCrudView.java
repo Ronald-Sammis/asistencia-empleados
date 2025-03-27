@@ -1,0 +1,198 @@
+package pe.com.sammis.vale.vistas;
+
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Input;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vaadin.flow.router.Route;
+import org.springframework.beans.factory.annotation.Autowired;
+import pe.com.sammis.vale.models.TipoAsistencia;
+import pe.com.sammis.vale.repositories.TipoAsistenciaRepository;
+
+@CssImport("./themes/mi-tema/styles.css")
+@Route(value = "tipo", layout = MainLayout.class)
+public class TipoAsistenciaCrudView extends VerticalLayout {
+
+    private Grid<TipoAsistencia> grid = new Grid<>(TipoAsistencia.class);
+    private Button addButton = new Button( new Icon(VaadinIcon.PLUS_CIRCLE));
+    private TipoAsistenciaRepository repository;
+
+    private Dialog formDialog = new Dialog();
+    private Dialog confirmDialog = new Dialog();
+    private TextField nombreField = new TextField("Nombre");
+    private TextField colorHexField = new TextField("Código HEX");
+    private Input colorPicker = new Input();
+    private Button saveButton = new Button("Guardar");
+    private Button cancelButton = new Button("Cancelar");
+    private TipoAsistencia currentTipoAsistencia;
+    private boolean notificationShown = false;
+
+    private TextField searchField = new TextField();
+
+    @Autowired
+    public TipoAsistenciaCrudView(TipoAsistenciaRepository repository) {
+        addClassName("main-view");
+
+        this.repository = repository;
+        add(new H1("Tipos de Asistencia"));
+
+        configureColorPicker();
+        configureGrid();
+        createForm();
+        configureToolbar();
+        updateList();
+    }
+
+    private void configureColorPicker() {
+        colorPicker.setType("color");
+        colorPicker.getStyle().set("width", "100%");
+
+        colorPicker.addValueChangeListener(event -> {
+            if (!event.getValue().equals(colorHexField.getValue())) {
+                colorHexField.setValue(event.getValue());
+            }
+        });
+
+        colorHexField.addValueChangeListener(event -> {
+            if (event.getValue().matches("^#([A-Fa-f0-9]{6})$")) {
+                colorPicker.setValue(event.getValue());
+            }
+        });
+    }
+
+    private void configureToolbar() {
+        searchField.setPlaceholder("Buscar...");
+        searchField.setClearButtonVisible(true);
+        searchField.setWidth("300px");
+
+        addButton.addClickListener(e -> openForm(new TipoAsistencia()));
+
+        HorizontalLayout toolbar = new HorizontalLayout(addButton, searchField);
+        toolbar.setWidthFull();
+        toolbar.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        toolbar.setAlignItems(FlexComponent.Alignment.CENTER);
+        toolbar.setPadding(true);
+
+        add(toolbar, grid);
+    }
+
+    private void configureGrid() {
+        grid.getElement().getStyle().set("font-size", "12px");
+        grid.setColumns("id", "nombre", "colorHex");
+        grid.setWidthFull();
+
+        grid.addComponentColumn(tipo -> {
+            Div colorPreview = new Div();
+            colorPreview.getStyle().set("background-color", "#" + tipo.getColorHex().substring(0, 6));
+            colorPreview.getStyle().set("width", "20px");
+            colorPreview.getStyle().set("height", "20px");
+            colorPreview.getStyle().set("border-radius", "50%");
+            return colorPreview;
+        }).setHeader("Vista Previa");
+
+        grid.addComponentColumn(tipo -> {
+            Button editButton = new Button(new Icon(VaadinIcon.EDIT));
+            editButton.addClickListener(event -> openForm(tipo));
+            return editButton;
+        }).setHeader("Editar");
+
+        grid.addComponentColumn(tipo -> {
+            Button deleteButton = new Button(new Icon(VaadinIcon.TRASH));
+            deleteButton.addClickListener(event -> confirmDelete(tipo));
+            return deleteButton;
+        }).setHeader("Eliminar");
+    }
+
+    private void createForm() {
+        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        saveButton.addClickListener(e -> saveTipoAsistencia());
+        cancelButton.addClickListener(e -> formDialog.close());
+
+        VerticalLayout formLayout = new VerticalLayout();
+        formLayout.setSpacing(true);
+        formLayout.setPadding(true);
+        formLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+
+        formLayout.add(nombreField);
+        formLayout.add(colorHexField); // Código HEX primero
+        formLayout.add(colorPicker);   // Color Picker al final
+        formLayout.add(new HorizontalLayout(saveButton, cancelButton));
+
+        formDialog.add(formLayout);
+    }
+
+    private void openForm(TipoAsistencia tipoAsistencia) {
+        currentTipoAsistencia = tipoAsistencia;
+        nombreField.setValue(tipoAsistencia.getNombre() != null ? tipoAsistencia.getNombre() : "");
+        String color = tipoAsistencia.getColorHex() != null ? "#" + tipoAsistencia.getColorHex().substring(0, 6) : "#000000";
+        colorHexField.setValue(color);
+        colorPicker.setValue(color);
+        formDialog.open();
+        notificationShown = false;
+    }
+
+    private void saveTipoAsistencia() {
+        if (nombreField.isEmpty() || colorHexField.isEmpty()) {
+            if (!notificationShown) {
+                Notification notification = Notification.show("Por favor, complete los campos obligatorios.", 3000, Notification.Position.BOTTOM_CENTER);
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                notification.addOpenedChangeListener(event -> notificationShown = false);
+                notificationShown = true;
+            }
+        } else {
+            currentTipoAsistencia.setNombre(nombreField.getValue());
+            String color = colorHexField.getValue().replace("#", "") + "FF";
+            currentTipoAsistencia.setColorHex(color);
+            repository.save(currentTipoAsistencia);
+            updateList();
+            formDialog.close();
+            notificationShown = false;
+            Notification notification = Notification.show("Tipo de asistencia guardado correctamente: " + currentTipoAsistencia.getNombre().toUpperCase(), 3000, Notification.Position.BOTTOM_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            notification.addOpenedChangeListener(event -> notificationShown = false);
+        }
+    }
+
+    private void confirmDelete(TipoAsistencia tipoAsistencia) {
+        confirmDialog.removeAll();
+        confirmDialog.add("¿Está seguro de que desea eliminar este tipo de asistencia?");
+
+        Button confirmButton = new Button("Sí", event -> {
+            repository.delete(tipoAsistencia);
+            updateList();
+            confirmDialog.close();
+            Notification.show("Tipo de asistencia eliminado: " + tipoAsistencia.getNombre().toUpperCase(), 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+        });
+        confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button cancelButton = new Button("No", event -> confirmDialog.close());
+        confirmDialog.add(new HorizontalLayout(confirmButton, cancelButton));
+        confirmDialog.open();
+    }
+
+    private void updateList() {
+        grid.setItems(repository.findAll());
+    }
+
+    private void filterList(String searchTerm) {
+        ListDataProvider<TipoAsistencia> dataProvider = (ListDataProvider<TipoAsistencia>) grid.getDataProvider();
+        dataProvider.setFilter(tipoAsistencia ->
+                tipoAsistencia.getNombre().toLowerCase().contains(searchTerm.toLowerCase()) ||
+                        tipoAsistencia.getColorHex().toLowerCase().contains(searchTerm.toLowerCase()));
+        grid.getDataProvider().refreshAll();
+    }
+}
