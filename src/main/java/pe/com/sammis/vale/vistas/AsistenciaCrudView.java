@@ -102,6 +102,7 @@ public class AsistenciaCrudView extends VerticalLayout {
 
         Dialog modal = new Dialog();
         modal.setWidth("60vw");
+        modal.setMaxWidth("500px");
         modal.setHeight("70vh");
 
         Grid<Empleado> empleadosGrid = new Grid<>(Empleado.class, false);
