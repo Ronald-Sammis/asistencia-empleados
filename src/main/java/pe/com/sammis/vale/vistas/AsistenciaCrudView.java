@@ -24,6 +24,7 @@ import pe.com.sammis.vale.repositories.TipoAsistenciaRepository;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,20 +127,28 @@ public class AsistenciaCrudView extends VerticalLayout {
         }).setHeader("Asistencia");
 
         // ✅ Barra de herramientas en la parte superior del modal
+        // ✅ Barra de herramientas en la parte superior del modal
         Button guardarButton = new Button("Guardar", e -> {
+            List<Asistencia> asistenciasAGuardar = new ArrayList<>();
+
             empleados.forEach(empleado -> {
                 TipoAsistencia tipoSeleccionado = asistenciaMap.get(empleado).getValue();
                 if (tipoSeleccionado != null) {
                     Asistencia nuevaAsistencia = new Asistencia();
                     nuevaAsistencia.setEmpleado(empleado);
-                    nuevaAsistencia.setFecha(fecha); // ✅ Se guarda correctamente la fecha
+                    nuevaAsistencia.setFecha(fecha);
                     nuevaAsistencia.setTipoAsistencia(tipoSeleccionado);
-                    asistenciaRepository.save(nuevaAsistencia);
+                    asistenciasAGuardar.add(nuevaAsistencia);
                 }
             });
+
+            // ✅ Guarda todas las asistencias en una sola transacción
+            asistenciaRepository.saveAll(asistenciasAGuardar);
+
             modal.close();
             actualizarGrid();
         });
+
         guardarButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         Button cerrarButton = new Button("Cerrar", e -> modal.close());
