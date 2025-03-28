@@ -115,6 +115,11 @@ public class AsistenciaCrudView extends VerticalLayout {
             select.getStyle().set("font-size", "10px");
             select.getElement().getStyle().set("font-size", "10px");  // Asegurar que el dropdown también tenga tamaño de letra 10px
 
+            // Establecer valor por defecto con texto "SIN_REGISTRO"
+            TipoAsistencia tipoAsistenciaDefault = new TipoAsistencia();
+            tipoAsistenciaDefault.setNombre("SIN_REGISTRO");
+            select.setValue(tipoAsistenciaDefault);  // Establecer el valor por defecto
+
             // Crear el "card" usando un Div
             Div card = new Div();
             card.addClassName("empleado-card");
@@ -124,11 +129,11 @@ public class AsistenciaCrudView extends VerticalLayout {
             card.getStyle()
                     .set("border", "1px solid #ddd")
                     .set("border-radius", "10px")
+                    .set("margin-bottom", "5px")
                     .set("font-size", "10px");  // Establecer tamaño de letra a 10px en el card
 
             // Crear el layout dentro del card
             HorizontalLayout cardLayout = new HorizontalLayout();
-            cardLayout.getStyle().set("padding", "10px");
 
             // Crear un Span con el nombre completo
             Span spanEmpleado = new Span(textoEmpleado);
@@ -147,29 +152,29 @@ public class AsistenciaCrudView extends VerticalLayout {
             // Añadir el layout al card
             card.add(cardLayout);
 
-            // Cambiar el color del card y el texto del ComboBox según la selección del ComboBox
+            // Cambiar el color del card y del texto según la selección del ComboBox
             select.addValueChangeListener(event -> {
                 TipoAsistencia tipoAsistenciaSeleccionado = event.getValue();
                 if (tipoAsistenciaSeleccionado != null) {
                     String colorHex = tipoAsistenciaSeleccionado.getColorHex(); // Obtener el color del tipo de asistencia
-                    // Solo aplicar el color si existe un color válido
                     if (colorHex != null && !colorHex.isEmpty()) {
                         card.getStyle().set("background-color", colorHex);  // Cambiar el color del card
-                        // Calcular el contraste para cambiar el color del texto
-                        String textColor = getContrastingTextColor(colorHex);
-                        spanEmpleado.getStyle().set("color", textColor);  // Cambiar el color del texto
-                        select.getStyle().set("color", textColor);  // Cambiar el color del texto del ComboBox
+
+                        // Determinar el color de texto según el color de fondo
+                        String textoColor = calcularColorTexto(colorHex);
+                        spanEmpleado.getStyle().set("color", textoColor);  // Cambiar color del texto en el card
+                        select.getStyle().set("color", textoColor);  // Cambiar color del texto en el ComboBox
                     } else {
                         // Asegurar un valor por defecto si el color no está definido
                         card.getStyle().set("background-color", "#FFFFFF");
-                        spanEmpleado.getStyle().set("color", "#000000");  // Color de texto negro
-                        select.getStyle().set("color", "#000000");  // Color de texto negro en ComboBox
+                        spanEmpleado.getStyle().set("color", "#000000");  // Text color blanco por defecto
+                        select.getStyle().set("color", "#000000");
                     }
                 } else {
                     // Si no hay selección, usar el color blanco por defecto
                     card.getStyle().set("background-color", "#FFFFFF");
-                    spanEmpleado.getStyle().set("color", "#000000");  // Color de texto negro
-                    select.getStyle().set("color", "#000000");  // Color de texto negro en ComboBox
+                    spanEmpleado.getStyle().set("color", "#000000");  // Text color blanco por defecto
+                    select.getStyle().set("color", "#000000");
                 }
             });
 
@@ -187,17 +192,6 @@ public class AsistenciaCrudView extends VerticalLayout {
         });
 
         add(volverButton);  // Añadir el botón de volver a la lista
-    }
-
-    private String getContrastingTextColor(String hexColor) {
-        // Convertir el color hex en RGB
-        int r = Integer.valueOf(hexColor.substring(1, 3), 16);
-        int g = Integer.valueOf(hexColor.substring(3, 5), 16);
-        int b = Integer.valueOf(hexColor.substring(5, 7), 16);
-        // Calcular el brillo percibido utilizando la fórmula de luminancia
-        double brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-        // Si el brillo es mayor a 0.5, usamos texto oscuro (negro), si no, blanco
-        return brightness > 0.5 ? "#000000" : "#FFFFFF";
     }
 
     private void abrirModalEdicion(LocalDate fecha) {
@@ -233,21 +227,40 @@ public class AsistenciaCrudView extends VerticalLayout {
             asistenciaRepository.saveAll(asistencias);
             modal.close();
             actualizarGrid();
-            Notification.show("Asistencias actualizadas con éxito.");
+            Notification.show("Asistencias actualizadas correctamente.");
         });
 
-        modal.add(asistenciaGrid, guardarButton);
+        Button cerrarButton = new Button("Cerrar", e -> modal.close());
+
+        HorizontalLayout toolbarModal = new HorizontalLayout(guardarButton, cerrarButton);
+        toolbarModal.setWidthFull();
+
+        VerticalLayout modalLayout = new VerticalLayout(toolbarModal, asistenciaGrid);
+        modal.add(modalLayout);
         modal.open();
     }
 
     private void eliminarAsistenciaPorFecha(LocalDate fecha) {
         List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
-        asistenciaRepository.deleteAll(asistencias);
-        actualizarGrid();
+        if (!asistencias.isEmpty()) {
+            asistenciaRepository.deleteAll(asistencias);
+            Notification.show("Asistencias eliminadas.");
+            actualizarGrid();
+        }
     }
 
     private void actualizarGrid() {
-        List<LocalDate> fechas = asistenciaRepository.findDistinctFechas();
-        grid.setItems(fechas);
+        grid.setItems(asistenciaRepository.findDistinctFechas());
+    }
+
+    private String calcularColorTexto(String colorHex) {
+        // Lógica para determinar si el fondo es claro u oscuro
+        int r = Integer.parseInt(colorHex.substring(1, 3), 16);
+        int g = Integer.parseInt(colorHex.substring(3, 5), 16);
+        int b = Integer.parseInt(colorHex.substring(5, 7), 16);
+
+        double luminosidad = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+        return luminosidad > 128 ? "#000000" : "#FFFFFF";  // Si la luminosidad es alta (claro), el texto será negro
     }
 }
