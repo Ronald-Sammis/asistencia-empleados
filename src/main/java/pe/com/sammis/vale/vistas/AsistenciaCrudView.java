@@ -98,7 +98,8 @@ public class AsistenciaCrudView extends VerticalLayout {
         // Crear un contenedor para todos los cards
         VerticalLayout panel = new VerticalLayout();
         panel.setSpacing(false); // Reducir espaciado entre los cards
-        panel.setWidth("360px");  // Ajustar el ancho del panel
+        panel.setWidth("375px");  // Ajustar el ancho del panel
+        panel.setPadding(false);  // Ajustar el ancho del panel
 
         // Recorrer cada empleado
         empleados.forEach(empleado -> {
@@ -125,15 +126,17 @@ public class AsistenciaCrudView extends VerticalLayout {
             card.addClassName("empleado-card");
             card.setWidth("100%");
 
+
             // Establecer el estilo directamente en el Div para el card
             card.getStyle()
                     .set("border", "1px solid #ddd")
-                    .set("border-radius", "10px")
+                    .set("border-radius", "12px")
                     .set("margin-bottom", "5px")
-                    .set("font-size", "10px");  // Establecer tamaño de letra a 10px en el card
+                    .set("font-size", "12px");  // Establecer tamaño de letra a 10px en el card
 
             // Crear el layout dentro del card
             HorizontalLayout cardLayout = new HorizontalLayout();
+
 
             // Crear un Span con el nombre completo
             Span spanEmpleado = new Span(textoEmpleado);
