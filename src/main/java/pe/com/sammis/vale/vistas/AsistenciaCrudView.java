@@ -99,8 +99,8 @@ public class AsistenciaCrudView extends VerticalLayout {
 
         // Crear un contenedor para todos los cards
         VerticalLayout panel = new VerticalLayout();
-        panel.setSpacing(true); // Espaciado entre los cards
-        panel.setWidth("250px");  // Ajustar el ancho del panel
+        panel.setSpacing(false); // Reducir espaciado entre los cards
+        panel.setWidth("350px");  // Ajustar el ancho del panel
 
         // Recorrer cada empleado
         empleados.forEach(empleado -> {
@@ -111,27 +111,28 @@ public class AsistenciaCrudView extends VerticalLayout {
             select.setItems(tiposAsistencia);
             select.setItemLabelGenerator(TipoAsistencia::getNombre);
             select.setPlaceholder("Seleccionar tipo de asistencia");
-            select.setWidth("150px");
+            select.setWidth("125px");
 
             // Crear el "card" usando un Div
             Div card = new Div();
             card.addClassName("empleado-card");
-            card.setWidth("100%"); // El card se ajustará al ancho del panel
+            card.setWidth("100%");
+            // El card se ajustará al ancho del panel
 
             // Establecer el estilo directamente en el Div para el card
             card.getStyle()
                     .set("border", "1px solid #ddd")
                     .set("border-radius", "10px")
-                    .set("margin-bottom", "15px");
+                    .set("margin-bottom", "5px");  // Reducir el margen entre los cards
 
             // Crear el layout dentro del card, pero con un VerticalLayout
-            VerticalLayout cardLayout = new VerticalLayout();
+            HorizontalLayout cardLayout = new HorizontalLayout();
             cardLayout.add(new Span(textoEmpleado));  // Nombre del empleado
             cardLayout.add(select);  // ComboBox de asistencia
             cardLayout.setAlignItems(Alignment.CENTER); // Centrar ambos elementos
 
             // Añadir un espaciado y padding mínimo dentro del card
-            cardLayout.setSpacing(true);  // Espaciado moderado entre los componentes
+            cardLayout.setSpacing(false);  // Reducir el espaciado dentro del card
             cardLayout.setPadding(true);  // Añadir padding mínimo
 
             // Añadir el layout al card
@@ -152,6 +153,8 @@ public class AsistenciaCrudView extends VerticalLayout {
 
         add(volverButton);  // Añadir el botón de volver a la lista
     }
+
+
 
     private void abrirModalEdicion(LocalDate fecha) {
         List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
