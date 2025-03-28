@@ -1,0 +1,35 @@
+[33mcommit dcdb39297788b749518b5d9a8257551e8f9c5dbd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m
+Author: Ronald-Sammis <ronaldo.27marzo@gmail.com>
+Date:   Thu Mar 27 20:00:41 2025 -0500
+
+    Refactorización del método abrirModal para mostrar solo nombre, apellido y tipo de asistencia
+
+[33mcommit 39cb005858011b0ed4a6d40262f690982d90224c[m
+Author: Ronald-Sammis <ronaldo.27marzo@gmail.com>
+Date:   Thu Mar 27 18:56:00 2025 -0500
+
+    Ajuste de modal para ser responsivo en móviles
+
+[33mcommit f63c0050930318afddffec74161e0962cfde0b53[m
+Author: Ronald-Sammis <ronaldo.27marzo@gmail.com>
+Date:   Thu Mar 27 16:56:22 2025 -0500
+
+    Optimización de guardar asistencias con saveAll()
+
+[33mcommit 505f8ad20c40ba47d8167ec693ee27274e89508c[m
+Author: Ronald-Sammis <ronaldo.27marzo@gmail.com>
+Date:   Thu Mar 27 10:14:55 2025 -0500
+
+    Primer commit
+
+[33mcommit 6c3a1594f9edfe0cb8073920ad495fd687340864[m
+Author: Ronald-Sammis <ronaldo.27marzo@gmail.com>
+Date:   Thu Mar 27 10:13:57 2025 -0500
+
+    Primer commit
+
+[33mcommit b078c49a5299a0f7c7d9182ab1861495f1f40dfc[m
+Author: Ronald-Sammis <ronaldo.27marzo@gmail.com>
+Date:   Wed Mar 26 19:30:21 2025 -0500
+
+    Primer commit

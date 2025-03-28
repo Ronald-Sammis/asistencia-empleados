@@ -6,6 +6,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -24,7 +25,6 @@ import pe.com.sammis.vale.repositories.EmpleadoRepository;
 import pe.com.sammis.vale.repositories.TipoAsistenciaRepository;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +36,6 @@ public class AsistenciaCrudView extends VerticalLayout {
     private final AsistenciaRepository asistenciaRepository;
     private final EmpleadoRepository empleadoRepository;
     private final TipoAsistenciaRepository tipoAsistenciaRepository;
-    private final Dialog confirmDialog = new Dialog();
 
     private final Grid<LocalDate> grid = new Grid<>(LocalDate.class, false);
     private final DatePicker fechaPicker = new DatePicker();
@@ -95,63 +94,64 @@ public class AsistenciaCrudView extends VerticalLayout {
             return;
         }
 
-        Dialog modal = new Dialog();
-        modal.setWidth("50vw");
-        modal.setHeight("60vh");
+        // Ocultar el Grid
+        grid.setVisible(false);
 
-        // Creamos un Grid con solo nombre y apellido, sin ID ni fecha
-        Grid<Empleado> empleadosGrid = new Grid<>(Empleado.class, false);
-        empleadosGrid.setItems(empleados);
+        // Crear un contenedor para todos los cards
+        VerticalLayout panel = new VerticalLayout();
+        panel.setSpacing(true); // Espaciado entre los cards
+        panel.setWidth("250px");  // Ajustar el ancho del panel
 
-        // Solo mostramos los nombres
-        empleadosGrid.addColumn(e -> e.getNombre() + " " + e.getApellido()).setHeader("Nombres");
+        // Recorrer cada empleado
+        empleados.forEach(empleado -> {
+            String textoEmpleado = empleado.getNombre() + " " + empleado.getApellido();
 
-        // Mapa para asociar cada empleado con su selección de tipo de asistencia
-        Map<Empleado, ComboBox<TipoAsistencia>> asistenciaMap = new HashMap<>();
-        empleadosGrid.addComponentColumn(empleado -> {
+            // Crear ComboBox para cada empleado
             ComboBox<TipoAsistencia> select = new ComboBox<>();
             select.setItems(tiposAsistencia);
             select.setItemLabelGenerator(TipoAsistencia::getNombre);
-            asistenciaMap.put(empleado, select);
-            return select;
-        }).setHeader("Asistencia");
+            select.setPlaceholder("Seleccionar tipo de asistencia");
+            select.setWidth("150px");
 
-        Button guardarButton = new Button("Guardar", e -> {
-            // Guardamos la asistencia solo si se selecciona un tipo
-            empleados.forEach(empleado -> {
-                TipoAsistencia tipoSeleccionado = asistenciaMap.get(empleado).getValue();
-                if (tipoSeleccionado != null) {
-                    Asistencia nuevaAsistencia = new Asistencia();
-                    nuevaAsistencia.setEmpleado(empleado);
-                    nuevaAsistencia.setFecha(fecha);
-                    nuevaAsistencia.setTipoAsistencia(tipoSeleccionado);
-                    asistenciaRepository.save(nuevaAsistencia);
-                }
-            });
+            // Crear el "card" usando un Div
+            Div card = new Div();
+            card.addClassName("empleado-card");
+            card.setWidth("100%"); // El card se ajustará al ancho del panel
 
-            modal.close();
-            actualizarGrid();
+            // Establecer el estilo directamente en el Div para el card
+            card.getStyle()
+                    .set("border", "1px solid #ddd")
+                    .set("border-radius", "10px")
+                    .set("margin-bottom", "15px");
+
+            // Crear el layout dentro del card, pero con un VerticalLayout
+            VerticalLayout cardLayout = new VerticalLayout();
+            cardLayout.add(new Span(textoEmpleado));  // Nombre del empleado
+            cardLayout.add(select);  // ComboBox de asistencia
+            cardLayout.setAlignItems(Alignment.CENTER); // Centrar ambos elementos
+
+            // Añadir un espaciado y padding mínimo dentro del card
+            cardLayout.setSpacing(true);  // Espaciado moderado entre los componentes
+            cardLayout.setPadding(true);  // Añadir padding mínimo
+
+            // Añadir el layout al card
+            card.add(cardLayout);
+
+            // Agregar el card al panel
+            panel.add(card);
         });
 
-        Button cerrarButton = new Button("Cerrar", e -> modal.close());
+        // Agregar el panel a la vista o contenedor de tu UI
+        add(panel);
 
-        // Barra de herramientas con los botones
-        HorizontalLayout toolbarModal = new HorizontalLayout(guardarButton, cerrarButton);
-        toolbarModal.setWidthFull();
+        // Mostrar un botón para volver a la lista
+        Button volverButton = new Button("Volver a la lista", e -> {
+            remove(panel);  // Elimina el panel con los cards
+            grid.setVisible(true);  // Vuelve a mostrar el Grid
+        });
 
-        // Layout del modal
-        VerticalLayout modalLayout = new VerticalLayout(toolbarModal, empleadosGrid);
-        modal.add(modalLayout);
-        modal.open();
+        add(volverButton);  // Añadir el botón de volver a la lista
     }
-
-
-
-
-
-
-
-
 
     private void abrirModalEdicion(LocalDate fecha) {
         List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
@@ -199,20 +199,7 @@ public class AsistenciaCrudView extends VerticalLayout {
     }
 
     private void eliminarAsistenciaPorFecha(LocalDate fecha) {
-        confirmDialog.removeAll();
-        confirmDialog.add("¿Está seguro de que desea eliminar este registro de asistencias del: " + fecha + "?");
-
-        Button confirmButton = new Button("Sí", event -> {
-            asistenciaRepository.deleteAll(asistenciaRepository.findByFecha(fecha));
-            actualizarGrid();
-            confirmDialog.close();
-            Notification.show("Registro de asistencias eliminado.", 3000, Notification.Position.BOTTOM_CENTER)
-                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-        });
-
-        Button cancelButton = new Button("No", event -> confirmDialog.close());
-        confirmDialog.add(new HorizontalLayout(confirmButton, cancelButton));
-        confirmDialog.open();
+        // Implementación para eliminar la asistencia
     }
 
     private void actualizarGrid() {
