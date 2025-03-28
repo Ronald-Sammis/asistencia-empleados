@@ -25,9 +25,7 @@ import pe.com.sammis.vale.repositories.EmpleadoRepository;
 import pe.com.sammis.vale.repositories.TipoAsistenciaRepository;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Route(value = "asistencia", layout = MainLayout.class)
 @PageTitle("Gestión de Asistencias")
@@ -63,7 +61,7 @@ public class AsistenciaCrudView extends VerticalLayout {
     }
 
     private void configurarGrid() {
-        grid.getElement().getStyle().set("font-size", "12px");
+        grid.getElement().getStyle().set("font-size", "10px");
         grid.addColumn(LocalDate::toString).setHeader("Fecha");
         grid.addComponentColumn(fecha -> {
             Button editar = new Button(new Icon(VaadinIcon.EDIT), e -> abrirModalEdicion(fecha));
@@ -100,7 +98,7 @@ public class AsistenciaCrudView extends VerticalLayout {
         // Crear un contenedor para todos los cards
         VerticalLayout panel = new VerticalLayout();
         panel.setSpacing(false); // Reducir espaciado entre los cards
-        panel.setWidth("350px");  // Ajustar el ancho del panel
+        panel.setWidth("360px");  // Ajustar el ancho del panel
 
         // Recorrer cada empleado
         empleados.forEach(empleado -> {
@@ -108,41 +106,78 @@ public class AsistenciaCrudView extends VerticalLayout {
 
             // Crear ComboBox para cada empleado
             ComboBox<TipoAsistencia> select = new ComboBox<>();
-            select.setItems(tiposAsistencia);
-            select.setItemLabelGenerator(TipoAsistencia::getNombre);
+            select.setItems(tiposAsistencia);  // Establecer los tipos de asistencia en el ComboBox
+            select.setItemLabelGenerator(TipoAsistencia::getNombre);  // Mostrar solo el nombre de la asistencia
             select.setPlaceholder("Seleccionar tipo de asistencia");
             select.setWidth("125px");
+
+            // Establecer tamaño de letra para el ComboBox
+            select.getStyle().set("font-size", "10px");
+            select.getElement().getStyle().set("font-size", "10px");  // Asegurar que el dropdown también tenga tamaño de letra 10px
 
             // Crear el "card" usando un Div
             Div card = new Div();
             card.addClassName("empleado-card");
             card.setWidth("100%");
-            // El card se ajustará al ancho del panel
 
             // Establecer el estilo directamente en el Div para el card
             card.getStyle()
                     .set("border", "1px solid #ddd")
                     .set("border-radius", "10px")
-                    .set("margin-bottom", "5px");  // Reducir el margen entre los cards
+                    .set("font-size", "10px");  // Establecer tamaño de letra a 10px en el card
 
-            // Crear el layout dentro del card, pero con un VerticalLayout
+            // Crear el layout dentro del card
             HorizontalLayout cardLayout = new HorizontalLayout();
-            cardLayout.add(new Span(textoEmpleado));  // Nombre del empleado
+            cardLayout.getStyle().set("padding", "10px");
+
+            // Crear un Span con el nombre completo
+            Span spanEmpleado = new Span(textoEmpleado);
+            spanEmpleado.setWidth("200px");  // Establecer un ancho fijo para el Span
+            spanEmpleado.getStyle().set("white-space", "nowrap");  // Evitar que el texto se divida en varias líneas
+
+            // Añadir el Span y el ComboBox al layout
+            cardLayout.add(spanEmpleado);  // Nombre del empleado
             cardLayout.add(select);  // ComboBox de asistencia
             cardLayout.setAlignItems(Alignment.CENTER); // Centrar ambos elementos
 
-            // Añadir un espaciado y padding mínimo dentro del card
-            cardLayout.setSpacing(false);  // Reducir el espaciado dentro del card
-            cardLayout.setPadding(true);  // Añadir padding mínimo
+            // Añadir espaciado y padding mínimo dentro del card
+            cardLayout.setSpacing(false);
+            cardLayout.setPadding(true);
 
             // Añadir el layout al card
             card.add(cardLayout);
+
+            // Cambiar el color del card y el texto del ComboBox según la selección del ComboBox
+            select.addValueChangeListener(event -> {
+                TipoAsistencia tipoAsistenciaSeleccionado = event.getValue();
+                if (tipoAsistenciaSeleccionado != null) {
+                    String colorHex = tipoAsistenciaSeleccionado.getColorHex(); // Obtener el color del tipo de asistencia
+                    // Solo aplicar el color si existe un color válido
+                    if (colorHex != null && !colorHex.isEmpty()) {
+                        card.getStyle().set("background-color", colorHex);  // Cambiar el color del card
+                        // Calcular el contraste para cambiar el color del texto
+                        String textColor = getContrastingTextColor(colorHex);
+                        spanEmpleado.getStyle().set("color", textColor);  // Cambiar el color del texto
+                        select.getStyle().set("color", textColor);  // Cambiar el color del texto del ComboBox
+                    } else {
+                        // Asegurar un valor por defecto si el color no está definido
+                        card.getStyle().set("background-color", "#FFFFFF");
+                        spanEmpleado.getStyle().set("color", "#000000");  // Color de texto negro
+                        select.getStyle().set("color", "#000000");  // Color de texto negro en ComboBox
+                    }
+                } else {
+                    // Si no hay selección, usar el color blanco por defecto
+                    card.getStyle().set("background-color", "#FFFFFF");
+                    spanEmpleado.getStyle().set("color", "#000000");  // Color de texto negro
+                    select.getStyle().set("color", "#000000");  // Color de texto negro en ComboBox
+                }
+            });
 
             // Agregar el card al panel
             panel.add(card);
         });
 
-        // Agregar el panel a la vista o contenedor de tu UI
+        // Agregar el panel a la vista
         add(panel);
 
         // Mostrar un botón para volver a la lista
@@ -154,7 +189,16 @@ public class AsistenciaCrudView extends VerticalLayout {
         add(volverButton);  // Añadir el botón de volver a la lista
     }
 
-
+    private String getContrastingTextColor(String hexColor) {
+        // Convertir el color hex en RGB
+        int r = Integer.valueOf(hexColor.substring(1, 3), 16);
+        int g = Integer.valueOf(hexColor.substring(3, 5), 16);
+        int b = Integer.valueOf(hexColor.substring(5, 7), 16);
+        // Calcular el brillo percibido utilizando la fórmula de luminancia
+        double brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        // Si el brillo es mayor a 0.5, usamos texto oscuro (negro), si no, blanco
+        return brightness > 0.5 ? "#000000" : "#FFFFFF";
+    }
 
     private void abrirModalEdicion(LocalDate fecha) {
         List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
@@ -169,43 +213,41 @@ public class AsistenciaCrudView extends VerticalLayout {
 
         Grid<Asistencia> asistenciaGrid = new Grid<>(Asistencia.class, false);
         asistenciaGrid.setItems(asistencias);
+
         asistenciaGrid.addColumn(a -> a.getEmpleado().getNombre() + " " + a.getEmpleado().getApellido()).setHeader("Nombres");
 
-        Map<Asistencia, ComboBox<TipoAsistencia>> asistenciaMap = new HashMap<>();
+        // Columna para seleccionar el tipo de asistencia
         asistenciaGrid.addComponentColumn(asistencia -> {
             ComboBox<TipoAsistencia> select = new ComboBox<>();
             select.setItems(tipoAsistenciaRepository.findAll());
             select.setItemLabelGenerator(TipoAsistencia::getNombre);
             select.setValue(asistencia.getTipoAsistencia());
-            asistenciaMap.put(asistencia, select);
+            select.addValueChangeListener(event -> {
+                asistencia.setTipoAsistencia(event.getValue());
+            });
             return select;
         }).setHeader("Asistencia");
 
         Button guardarButton = new Button("Guardar", e -> {
-            asistenciaMap.forEach((asistencia, select) -> {
-                asistencia.setTipoAsistencia(select.getValue());
-                asistenciaRepository.save(asistencia);
-            });
+            // Guardamos los cambios directamente desde los objetos Asistencia
+            asistenciaRepository.saveAll(asistencias);
             modal.close();
             actualizarGrid();
-            Notification.show("Asistencias actualizadas correctamente.");
+            Notification.show("Asistencias actualizadas con éxito.");
         });
 
-        Button cerrarButton = new Button("Cerrar", e -> modal.close());
-
-        HorizontalLayout toolbarModal = new HorizontalLayout(guardarButton, cerrarButton);
-        toolbarModal.setWidthFull();
-
-        VerticalLayout modalLayout = new VerticalLayout(toolbarModal, asistenciaGrid);
-        modal.add(modalLayout);
+        modal.add(asistenciaGrid, guardarButton);
         modal.open();
     }
 
     private void eliminarAsistenciaPorFecha(LocalDate fecha) {
-        // Implementación para eliminar la asistencia
+        List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
+        asistenciaRepository.deleteAll(asistencias);
+        actualizarGrid();
     }
 
     private void actualizarGrid() {
-        grid.setItems(asistenciaRepository.findDistinctFechas());
+        List<LocalDate> fechas = asistenciaRepository.findDistinctFechas();
+        grid.setItems(fechas);
     }
 }

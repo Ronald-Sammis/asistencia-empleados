@@ -96,7 +96,15 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
 
         grid.addComponentColumn(tipo -> {
             Div colorPreview = new Div();
-            colorPreview.getStyle().set("background-color", "#" + tipo.getColorHex().substring(0, 6));
+
+            // Asegurarse de que el color en la vista previa tenga el '#' si es necesario
+            String colorHex = tipo.getColorHex();
+            if (colorHex != null && !colorHex.startsWith("#")) {
+                colorHex = "#" + colorHex;  // Agregar '#' si no está presente
+            }
+
+            // Usar el valor con '#' para la vista previa
+            colorPreview.getStyle().set("background-color", colorHex);
             colorPreview.getStyle().set("width", "20px");
             colorPreview.getStyle().set("height", "20px");
             colorPreview.getStyle().set("border-radius", "50%");
@@ -115,6 +123,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
             return deleteButton;
         }).setHeader("Eliminar");
     }
+
 
     private void createForm() {
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -137,12 +146,16 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
     private void openForm(TipoAsistencia tipoAsistencia) {
         currentTipoAsistencia = tipoAsistencia;
         nombreField.setValue(tipoAsistencia.getNombre() != null ? tipoAsistencia.getNombre() : "");
-        String color = tipoAsistencia.getColorHex() != null ? "#" + tipoAsistencia.getColorHex().substring(0, 6) : "#000000";
-        colorHexField.setValue(color);
-        colorPicker.setValue(color);
+
+        // Mostrar el color exactamente como está, con el '#'
+        String color = tipoAsistencia.getColorHex() != null ? tipoAsistencia.getColorHex() : "#000000";
+        colorHexField.setValue(color); // Mostrar el valor tal cual, incluyendo '#'
+        colorPicker.setValue(color); // Configurar el picker con el color
         formDialog.open();
         notificationShown = false;
     }
+
+
 
     private void saveTipoAsistencia() {
         if (nombreField.isEmpty() || colorHexField.isEmpty()) {
@@ -154,17 +167,24 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
             }
         } else {
             currentTipoAsistencia.setNombre(nombreField.getValue());
-            String color = colorHexField.getValue().replace("#", "") + "FF";
-            currentTipoAsistencia.setColorHex(color);
+
+            // Guardar el valor del color exactamente tal como se ingresa (con '#' si está presente)
+            String color = colorHexField.getValue();  // No hacer ningún cambio ni manipulación
+            currentTipoAsistencia.setColorHex(color); // Guardar el valor tal cual
+
             repository.save(currentTipoAsistencia);
             updateList();
             formDialog.close();
             notificationShown = false;
+
             Notification notification = Notification.show("Tipo de asistencia guardado correctamente: " + currentTipoAsistencia.getNombre().toUpperCase(), 3000, Notification.Position.BOTTOM_CENTER);
             notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             notification.addOpenedChangeListener(event -> notificationShown = false);
         }
     }
+
+
+
 
     private void confirmDelete(TipoAsistencia tipoAsistencia) {
         confirmDialog.removeAll();
