@@ -7,6 +7,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -24,7 +25,6 @@ import pe.com.sammis.vale.repositories.TipoAsistenciaRepository;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +36,7 @@ public class AsistenciaCrudView extends VerticalLayout {
     private final AsistenciaRepository asistenciaRepository;
     private final EmpleadoRepository empleadoRepository;
     private final TipoAsistenciaRepository tipoAsistenciaRepository;
-    private Dialog confirmDialog = new Dialog();
-    private boolean notificationShown = false;
+    private final Dialog confirmDialog = new Dialog();
 
     private final Grid<LocalDate> grid = new Grid<>(LocalDate.class, false);
     private final DatePicker fechaPicker = new DatePicker();
@@ -61,9 +60,7 @@ public class AsistenciaCrudView extends VerticalLayout {
     private void configurarBarraHerramientas() {
         fechaPicker.setValue(LocalDate.now());
         nuevoButton.addClickListener(e -> abrirModal(fechaPicker.getValue()));
-        HorizontalLayout toolbar = new HorizontalLayout(fechaPicker, nuevoButton);
-        toolbar.setWidthFull();
-        add(toolbar);
+        add(new HorizontalLayout(fechaPicker, nuevoButton));
     }
 
     private void configurarGrid() {
@@ -77,17 +74,15 @@ public class AsistenciaCrudView extends VerticalLayout {
     }
 
     private void abrirModal(LocalDate fecha) {
-        // ✅ Validación: No permitir registrar una fecha futura
         if (fecha.isAfter(LocalDate.now())) {
-            Notification notificacion=Notification.show("No se puede registrar asistencia para una fecha futura.",3000, Notification.Position.BOTTOM_CENTER);
-            notificacion.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("No se puede registrar asistencia para una fecha futura.", 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
 
-        // ✅ Validación: No permitir registrar una fecha ya tratada
         if (asistenciaRepository.existsByFecha(fecha)) {
-            Notification notificacion=Notification.show("Ya existen asistencias registradas para esta fecha.",3000, Notification.Position.BOTTOM_CENTER);
-            notificacion.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Ya existen asistencias registradas para esta fecha.", 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
 
@@ -95,29 +90,23 @@ public class AsistenciaCrudView extends VerticalLayout {
         List<Empleado> empleados = empleadoRepository.findAll();
 
         if (tiposAsistencia.isEmpty() || empleados.isEmpty()) {
-            Notification notificacion=Notification.show("Debe existir al menos un empleado y un tipo de asistencia para registrar asistencia.",3000, Notification.Position.BOTTOM_CENTER);
-            notificacion.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Debe existir al menos un empleado y un tipo de asistencia para registrar asistencia.", 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
 
         Dialog modal = new Dialog();
-        modal.setWidth("60vw");
-        modal.setMaxWidth("500px");
-        modal.setHeight("70vh");
+        modal.setWidth("50vw");
+        modal.setHeight("60vh");
 
+        // Creamos un Grid con solo nombre y apellido, sin ID ni fecha
         Grid<Empleado> empleadosGrid = new Grid<>(Empleado.class, false);
         empleadosGrid.setItems(empleados);
 
-        // ✅ Columna de FECHA basada en el DatePicker seleccionado
-        empleadosGrid.addColumn(e -> fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-                .setHeader("Fecha");
-
-        // ✅ Columna de ID del empleado
-        empleadosGrid.addColumn(Empleado::getId).setHeader("ID");
-
-        // ✅ Columna combinada de Nombres (Nombre + Apellido)
+        // Solo mostramos los nombres
         empleadosGrid.addColumn(e -> e.getNombre() + " " + e.getApellido()).setHeader("Nombres");
 
+        // Mapa para asociar cada empleado con su selección de tipo de asistencia
         Map<Empleado, ComboBox<TipoAsistencia>> asistenciaMap = new HashMap<>();
         empleadosGrid.addComponentColumn(empleado -> {
             ComboBox<TipoAsistencia> select = new ComboBox<>();
@@ -127,11 +116,8 @@ public class AsistenciaCrudView extends VerticalLayout {
             return select;
         }).setHeader("Asistencia");
 
-        // ✅ Barra de herramientas en la parte superior del modal
-        // ✅ Barra de herramientas en la parte superior del modal
         Button guardarButton = new Button("Guardar", e -> {
-            List<Asistencia> asistenciasAGuardar = new ArrayList<>();
-
+            // Guardamos la asistencia solo si se selecciona un tipo
             empleados.forEach(empleado -> {
                 TipoAsistencia tipoSeleccionado = asistenciaMap.get(empleado).getValue();
                 if (tipoSeleccionado != null) {
@@ -139,28 +125,33 @@ public class AsistenciaCrudView extends VerticalLayout {
                     nuevaAsistencia.setEmpleado(empleado);
                     nuevaAsistencia.setFecha(fecha);
                     nuevaAsistencia.setTipoAsistencia(tipoSeleccionado);
-                    asistenciasAGuardar.add(nuevaAsistencia);
+                    asistenciaRepository.save(nuevaAsistencia);
                 }
             });
-
-            // ✅ Guarda todas las asistencias en una sola transacción
-            asistenciaRepository.saveAll(asistenciasAGuardar);
 
             modal.close();
             actualizarGrid();
         });
 
-        guardarButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
         Button cerrarButton = new Button("Cerrar", e -> modal.close());
 
+        // Barra de herramientas con los botones
         HorizontalLayout toolbarModal = new HorizontalLayout(guardarButton, cerrarButton);
         toolbarModal.setWidthFull();
 
+        // Layout del modal
         VerticalLayout modalLayout = new VerticalLayout(toolbarModal, empleadosGrid);
         modal.add(modalLayout);
         modal.open();
     }
+
+
+
+
+
+
+
+
 
     private void abrirModalEdicion(LocalDate fecha) {
         List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
@@ -170,13 +161,12 @@ public class AsistenciaCrudView extends VerticalLayout {
         }
 
         Dialog modal = new Dialog();
-        modal.setWidth("60vw");
-        modal.setHeight("70vh");
+        modal.setWidth("50vw");
+        modal.setHeight("60vh");
 
         Grid<Asistencia> asistenciaGrid = new Grid<>(Asistencia.class, false);
         asistenciaGrid.setItems(asistencias);
-        asistenciaGrid.addColumn(a -> a.getEmpleado().getNombre()+" "+a.getEmpleado().getApellido()).setHeader("Nombres");
-
+        asistenciaGrid.addColumn(a -> a.getEmpleado().getNombre() + " " + a.getEmpleado().getApellido()).setHeader("Nombres");
 
         Map<Asistencia, ComboBox<TipoAsistencia>> asistenciaMap = new HashMap<>();
         asistenciaGrid.addComponentColumn(asistencia -> {
@@ -188,7 +178,6 @@ public class AsistenciaCrudView extends VerticalLayout {
             return select;
         }).setHeader("Asistencia");
 
-        // ✅ Barra de herramientas en la parte superior del modal de edición
         Button guardarButton = new Button("Guardar", e -> {
             asistenciaMap.forEach((asistencia, select) -> {
                 asistencia.setTipoAsistencia(select.getValue());
@@ -210,22 +199,16 @@ public class AsistenciaCrudView extends VerticalLayout {
     }
 
     private void eliminarAsistenciaPorFecha(LocalDate fecha) {
-
-
         confirmDialog.removeAll();
-        confirmDialog.add("¿Está seguro de que desea eliminar este registro de asistencias del: "+fecha+"?");
+        confirmDialog.add("¿Está seguro de que desea eliminar este registro de asistencias del: " + fecha + "?");
 
         Button confirmButton = new Button("Sí", event -> {
-
             asistenciaRepository.deleteAll(asistenciaRepository.findByFecha(fecha));
             actualizarGrid();
             confirmDialog.close();
-            notificationShown = false; // Reset para permitir nuevas notificaciones
-            Notification notification = Notification.show("Registro de asistencias del: " + fecha + " eliminado", 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            notification.addOpenedChangeListener(e -> notificationShown = false);
+            Notification.show("Registro de asistencias eliminado.", 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         });
-        confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         Button cancelButton = new Button("No", event -> confirmDialog.close());
         confirmDialog.add(new HorizontalLayout(confirmButton, cancelButton));
@@ -233,7 +216,6 @@ public class AsistenciaCrudView extends VerticalLayout {
     }
 
     private void actualizarGrid() {
-        List<LocalDate> fechas = asistenciaRepository.findDistinctFechas();
-        grid.setItems(fechas);
+        grid.setItems(asistenciaRepository.findDistinctFechas());
     }
 }
