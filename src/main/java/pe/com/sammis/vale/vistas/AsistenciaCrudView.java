@@ -1,6 +1,7 @@
 package pe.com.sammis.vale.vistas;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -53,16 +54,40 @@ public class AsistenciaCrudView extends VerticalLayout {
 
     private void configurarBarraHerramientas() {
         fechaPicker.setValue(LocalDate.now());
-        nuevoButton.addClickListener(e -> abrirModal(fechaPicker.getValue()));
+        nuevoButton.addClickListener(e -> abrirModalRegistrar(fechaPicker.getValue()));
+        nuevoButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         add(new HorizontalLayout(fechaPicker, nuevoButton));
     }
 
     private void configurarGrid() {
+        grid.setWidth("400px");
         grid.addColumn(fecha -> fecha.toString()).setHeader("Fecha");
-        grid.addComponentColumn(fecha -> new HorizontalLayout(new Button("Eliminar", e -> eliminarAsistenciaPorFecha(fecha)))).setHeader("Acciones");
+
+        grid.addComponentColumn(fecha -> {
+            Button editarButton = new Button("Editar");
+            editarButton.addClickListener(e -> abrirModalEditar(fecha));
+            editarButton.addThemeVariants(ButtonVariant.LUMO_WARNING);
+
+            Button eliminarButton = new Button("Eliminar");
+            eliminarButton.addClickListener(e -> eliminarAsistenciaPorFecha(fecha));
+            eliminarButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+
+            return new HorizontalLayout(editarButton, eliminarButton);
+        }).setHeader("Acciones");
     }
 
-    private void abrirModal(LocalDate fecha) {
+
+
+
+    private void abrirModalRegistrar(LocalDate fecha) {
+        // Verificar si la fecha ya está registrada
+        boolean fechaExistente = asistenciaRepository.findByFecha(fecha).size() > 0;
+        if (fechaExistente) {
+            Notification.show("Ya existe un registro de asistencia para esta fecha.", 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
         if (fecha.isAfter(LocalDate.now())) {
             Notification.show("No se puede registrar asistencia para una fecha futura.", 3000, Notification.Position.BOTTOM_CENTER)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -79,7 +104,7 @@ public class AsistenciaCrudView extends VerticalLayout {
         }
 
         Dialog modal = new Dialog();
-        modal.setWidth("600px");
+        modal.setWidth("400px");
 
         Grid<Empleado> empleadoGrid = new Grid<>(Empleado.class, false);
         empleadoGrid.setItems(empleados);
@@ -92,8 +117,41 @@ public class AsistenciaCrudView extends VerticalLayout {
             select.setItemLabelGenerator(TipoAsistencia::getNombre);
             select.setWidth("130px");
             select.getStyle().set("border-radius", "30px");
-            asistenciaMap.put(empleado, select);
 
+            // Establecer "SIN_REGISTRO" por defecto y asignar su color
+            TipoAsistencia sinRegistro = tiposAsistencia.stream()
+                    .filter(t -> "SIN_REGISTRO".equals(t.getNombre()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (sinRegistro != null) {
+                select.setValue(sinRegistro);
+                String colorHex = sinRegistro.getColorHex();
+                if (colorHex != null) {
+                    select.getStyle().set("background-color", colorHex);
+                    select.getStyle().set("color", getContrastingTextColor(colorHex));  // Aseguramos que el texto sea visible
+                }
+            }
+
+            // Verificar si existe una asistencia registrada para la fecha y el empleado
+            List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
+            Asistencia asistenciaExistente = asistencias.stream()
+                    .filter(a -> a.getEmpleado().equals(empleado))
+                    .findFirst()
+                    .orElse(null);
+
+            if (asistenciaExistente != null) {
+                select.setValue(asistenciaExistente.getTipoAsistencia());
+
+                // Asignar el color al cargar el valor
+                String colorHex = asistenciaExistente.getTipoAsistencia().getColorHex();
+                if (colorHex != null) {
+                    select.getStyle().set("background-color", colorHex);
+                    select.getStyle().set("color", getContrastingTextColor(colorHex));  // Aseguramos que el texto sea visible
+                }
+            }
+
+            // Evento para actualizar el color cuando el usuario cambia la selección
             select.addValueChangeListener(event -> {
                 TipoAsistencia seleccionado = event.getValue();
                 if (seleccionado != null && seleccionado.getColorHex() != null) {
@@ -101,20 +159,26 @@ public class AsistenciaCrudView extends VerticalLayout {
                     select.getStyle().set("color", getContrastingTextColor(seleccionado.getColorHex()));
                 }
             });
+
+            asistenciaMap.put(empleado, select);
             return select;
         }).setHeader("Tipo de Asistencia").setWidth("160px");
 
-        Button todosPuntualButton = new Button("PUNTUAL", e -> {
+        Button todosPuntualButton = new Button("Puntual", e -> {
             tiposAsistencia.stream().filter(t -> "PUNTUAL".equals(t.getNombre())).findFirst().ifPresent(tipo -> {
                 asistenciaMap.values().forEach(select -> select.setValue(tipo));
             });
         });
+        todosPuntualButton.getStyle().set("background", "#0eb90e"); // Verde
+        todosPuntualButton.getStyle().set("color", "white"); // Verde
 
-        Button sinRegistroButton = new Button("SIN_REGISTRO", e -> {
+        Button sinRegistroButton = new Button("Quitar", e -> {
             tiposAsistencia.stream().filter(t -> "SIN_REGISTRO".equals(t.getNombre())).findFirst().ifPresent(tipo -> {
                 asistenciaMap.values().forEach(select -> select.setValue(tipo));
             });
         });
+        sinRegistroButton.getStyle().set("background", "#808080"); // Gris
+        sinRegistroButton.getStyle().set("color", "white");
 
         Button guardarButton = new Button("Guardar", e -> {
             asistenciaMap.forEach((empleado, comboBox) -> {
@@ -143,6 +207,7 @@ public class AsistenciaCrudView extends VerticalLayout {
         modal.open();
     }
 
+
     private void eliminarAsistenciaPorFecha(LocalDate fecha) {
         asistenciaRepository.deleteAll(asistenciaRepository.findByFecha(fecha));
         Notification.show("Asistencias eliminadas.");
@@ -159,4 +224,78 @@ public class AsistenciaCrudView extends VerticalLayout {
         int b = Integer.parseInt(colorHex.substring(5, 7), 16);
         return (r * 0.299 + g * 0.587 + b * 0.114) > 128 ? "black" : "white";
     }
+
+    private void abrirModalEditar(LocalDate fecha) {
+        List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
+        if (asistencias.isEmpty()) {
+            Notification.show("No hay registros de asistencia para esta fecha.", 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_WARNING);
+            return;
+        }
+
+        Dialog modal = new Dialog();
+        modal.setWidth("400px");
+
+        Grid<Asistencia> asistenciaGrid = new Grid<>(Asistencia.class, false);
+        asistenciaGrid.setItems(asistencias);
+        Map<Asistencia, ComboBox<TipoAsistencia>> asistenciaMap = new HashMap<>();
+
+        asistenciaGrid.addColumn(a -> a.getEmpleado().getNombre() + " " + a.getEmpleado().getApellido())
+                .setHeader("Empleado").setWidth("150px");
+
+        asistenciaGrid.addComponentColumn(asistencia -> {
+            ComboBox<TipoAsistencia> select = new ComboBox<>();
+            List<TipoAsistencia> tiposAsistencia = tipoAsistenciaRepository.findAll();
+            select.setItems(tiposAsistencia);
+            select.setItemLabelGenerator(TipoAsistencia::getNombre);
+            select.setWidth("130px");
+            select.getStyle().set("border-radius", "30px");
+
+            // Precarga el valor de tipo de asistencia
+            select.setValue(asistencia.getTipoAsistencia());
+
+            // Aplicar el color de fondo si el tipo de asistencia tiene un color
+            TipoAsistencia tipoSeleccionado = asistencia.getTipoAsistencia();
+            if (tipoSeleccionado != null && tipoSeleccionado.getColorHex() != null) {
+                select.getStyle().set("background-color", tipoSeleccionado.getColorHex());
+                select.getStyle().set("color", getContrastingTextColor(tipoSeleccionado.getColorHex()));
+            }
+
+            select.addValueChangeListener(event -> {
+                TipoAsistencia seleccionado = event.getValue();
+                if (seleccionado != null && seleccionado.getColorHex() != null) {
+                    select.getStyle().set("background-color", seleccionado.getColorHex());
+                    select.getStyle().set("color", getContrastingTextColor(seleccionado.getColorHex()));
+                }
+            });
+
+            asistenciaMap.put(asistencia, select);
+            return select;
+        }).setHeader("Tipo de Asistencia").setWidth("160px");
+
+        Button guardarButton = new Button("Guardar", e -> {
+            asistenciaMap.forEach((asistencia, comboBox) -> {
+                TipoAsistencia tipoSeleccionado = comboBox.getValue();
+                if (tipoSeleccionado != null) {
+                    asistencia.setTipoAsistencia(tipoSeleccionado);
+                    asistenciaRepository.save(asistencia);
+                }
+            });
+            Notification.show("Asistencias actualizadas correctamente.");
+            modal.close();
+            actualizarGrid();
+        });
+
+        Button cerrarButton = new Button("Cerrar", e -> modal.close());
+
+        HorizontalLayout toolbarModal = new HorizontalLayout(guardarButton, cerrarButton);
+        toolbarModal.setWidthFull();
+
+        VerticalLayout modalLayout = new VerticalLayout(toolbarModal, asistenciaGrid);
+        modalLayout.setSizeFull();
+        modal.add(modalLayout);
+        modal.open();
+    }
+
+
 }

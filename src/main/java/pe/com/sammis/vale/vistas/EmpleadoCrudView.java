@@ -26,7 +26,7 @@ import pe.com.sammis.vale.repositories.EmpleadoRepository;
 public class EmpleadoCrudView extends VerticalLayout {
 
     private Grid<Empleado> grid = new Grid<>(Empleado.class);
-    private Button addButton = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
+    private Button addButton = new Button("Nuevo");
     private EmpleadoRepository repository;
 
     private Dialog formDialog = new Dialog();
@@ -58,6 +58,7 @@ public class EmpleadoCrudView extends VerticalLayout {
         searchField.addValueChangeListener(event -> filterList(event.getValue()));
 
         addButton.addClickListener(e -> openForm(new Empleado()));
+        addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         HorizontalLayout toolbar = new HorizontalLayout(addButton, searchField);
         toolbar.setWidthFull();
@@ -69,6 +70,7 @@ public class EmpleadoCrudView extends VerticalLayout {
 
     private void configureGrid() {
 
+        grid.setWidth("700px");
 
         grid.setColumns("id"); // Solo ID como columna directa
 
@@ -81,14 +83,16 @@ public class EmpleadoCrudView extends VerticalLayout {
 
 
         grid.addComponentColumn(empleado -> {
-            Button editButton = new Button(new Icon(VaadinIcon.EDIT));
+            Button editButton = new Button("Editar");
             editButton.addClickListener(event -> openForm(empleado));
+            editButton.addThemeVariants(ButtonVariant.LUMO_WARNING);
             return editButton;
         }).setHeader("Editar");
 
         grid.addComponentColumn(empleado -> {
-            Button deleteButton = new Button(new Icon(VaadinIcon.TRASH));
+            Button deleteButton = new Button("Eliminar");
             deleteButton.addClickListener(event -> confirmDelete(empleado));
+            deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
             return deleteButton;
         }).setHeader("Eliminar");
     }
