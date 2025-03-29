@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -59,20 +60,19 @@ public class EmpleadoCrudView extends VerticalLayout {
 
         addButton.addClickListener(e -> openForm(new Empleado()));
         addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        addButton.setWidth("75px");
 
         HorizontalLayout toolbar = new HorizontalLayout(addButton, searchField);
-        toolbar.setWidthFull();
-        toolbar.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        toolbar.setAlignItems(FlexComponent.Alignment.CENTER);
-
         add(toolbar, grid);
     }
 
     private void configureGrid() {
 
-        grid.setWidth("700px");
+        grid.setWidth("525px");
 
         grid.setColumns("id"); // Solo ID como columna directa
+        grid.getColumnByKey("id").setAutoWidth(true); // Cambia el valor según necesites
+
 
         grid.addColumn(persona -> persona.getNombre() + " " + persona.getApellido())
                 .setHeader("Nombres")
@@ -83,18 +83,38 @@ public class EmpleadoCrudView extends VerticalLayout {
 
 
         grid.addComponentColumn(empleado -> {
-            Button editButton = new Button("Editar");
-            editButton.addClickListener(event -> openForm(empleado));
-            editButton.addThemeVariants(ButtonVariant.LUMO_WARNING);
+            Button editButton = new Button(VaadinIcon.EDIT.create()); // Botón con icono de edición
+            editButton.addClickListener(event -> openForm(empleado)); // Acción al hacer clic
+            editButton.setWidth("75px");
+
+            // Estilos: fondo amarillo y texto negro
+            editButton.getStyle()
+                    .set("background-color", "var(--lumo-warning-color)")
+                    .set("color", "black");
+
             return editButton;
-        }).setHeader("Editar");
+        }).setHeader("Editar")
+                .setAutoWidth(true);
+
 
         grid.addComponentColumn(empleado -> {
-            Button deleteButton = new Button("Eliminar");
-            deleteButton.addClickListener(event -> confirmDelete(empleado));
-            deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            Button deleteButton = new Button(VaadinIcon.TRASH.create()); // Botón con icono de papelera
+            deleteButton.setWidth("75px");
+            deleteButton.addClickListener(event -> confirmDelete(empleado)); // Acción al hacer clic
+
+            // Estilos: fondo rojo y texto blanco
+            deleteButton.getStyle()
+                    .set("background-color", "var(--lumo-error-color)")
+                    .set("color", "white");
+
             return deleteButton;
-        }).setHeader("Eliminar");
+        }).setHeader("Eliminar")
+                .setAutoWidth(true);
+
+        grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
+
+
+
     }
 
     private void createForm() {

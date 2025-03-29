@@ -6,13 +6,16 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import pe.com.sammis.vale.models.Asistencia;
 import pe.com.sammis.vale.models.Empleado;
@@ -36,7 +39,7 @@ public class AsistenciaCrudView extends VerticalLayout {
 
     private final Grid<LocalDate> grid = new Grid<>(LocalDate.class, false);
     private final DatePicker fechaPicker = new DatePicker();
-    private final Button nuevoButton = new Button("Nuevo Registro");
+    private final Button nuevoButton = new Button("Nuevo");
 
     public AsistenciaCrudView(AsistenciaRepository asistenciaRepository,
                               EmpleadoRepository empleadoRepository,
@@ -54,26 +57,39 @@ public class AsistenciaCrudView extends VerticalLayout {
 
     private void configurarBarraHerramientas() {
         fechaPicker.setValue(LocalDate.now());
+        fechaPicker.setWidth("125px");
         nuevoButton.addClickListener(e -> abrirModalRegistrar(fechaPicker.getValue()));
         nuevoButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        nuevoButton.setWidth("75px");
         add(new HorizontalLayout(fechaPicker, nuevoButton));
     }
 
     private void configurarGrid() {
-        grid.setWidth("400px");
-        grid.addColumn(fecha -> fecha.toString()).setHeader("Fecha");
+        grid.setWidth("275px");
+        grid.addColumn(fecha -> fecha.toString()).setHeader("Fecha")
+                .setAutoWidth(true) // Puedes cambiar el valor según lo necesites
+                .setFlexGrow(0); // Evita que la columna cambie de tamaño automáticamente
 
         grid.addComponentColumn(fecha -> {
-            Button editarButton = new Button("Editar");
+            Button editarButton = new Button(VaadinIcon.EDIT.create());
             editarButton.addClickListener(e -> abrirModalEditar(fecha));
-            editarButton.addThemeVariants(ButtonVariant.LUMO_WARNING);
+            editarButton.getStyle()
+                    .set("background-color", "var(--lumo-warning-color)") // Fondo amarillo
+                    .set("color", "black"); // Texto negro
 
-            Button eliminarButton = new Button("Eliminar");
+            editarButton.setWidth("75px");
+
+            Button eliminarButton = new Button(VaadinIcon.TRASH.create());
             eliminarButton.addClickListener(e -> eliminarAsistenciaPorFecha(fecha));
-            eliminarButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            eliminarButton.getStyle()
+                    .set("background-color", "var(--lumo-error-color)") // Fondo amarillo
+                    .set("color", "white"); // Texto negro
+            eliminarButton.setWidth("75px");
 
             return new HorizontalLayout(editarButton, eliminarButton);
-        }).setHeader("Acciones");
+        }).setHeader("Acciones")
+                .setAutoWidth(true);
+        grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
     }
 
 
@@ -107,77 +123,80 @@ public class AsistenciaCrudView extends VerticalLayout {
         modal.setWidth("400px");
 
         Grid<Empleado> empleadoGrid = new Grid<>(Empleado.class, false);
+        empleadoGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
         empleadoGrid.setItems(empleados);
+        empleadoGrid.getStyle()
+                .set("margin", "0")  // Elimina márgenes
+                .set("padding", "0") // Elimina padding
+                .set("width", "100%"); // Asegura que ocupe todo el ancho disponible
+
         Map<Empleado, ComboBox<TipoAsistencia>> asistenciaMap = new HashMap<>();
 
-        empleadoGrid.addColumn(e -> e.getNombre() + " " + e.getApellido()).setHeader("Empleado").setWidth("150px");
+        empleadoGrid.addColumn(e -> e.getNombre() + " " + e.getApellido()).setHeader("Empleado").setAutoWidth(true);
         empleadoGrid.addComponentColumn(empleado -> {
-            ComboBox<TipoAsistencia> select = new ComboBox<>();
-            select.setItems(tiposAsistencia);
-            select.setItemLabelGenerator(TipoAsistencia::getNombre);
-            select.setWidth("130px");
-            select.getStyle().set("border-radius", "30px");
+                    ComboBox<TipoAsistencia> select = new ComboBox<>();
+                    select.setItems(tiposAsistencia);
+                    select.setItemLabelGenerator(TipoAsistencia::getNombre);
+                    select.setWidth("100PX");
+                    select.getStyle().set("border-radius", "30px");
 
-            // Establecer "SIN_REGISTRO" por defecto y asignar su color
-            TipoAsistencia sinRegistro = tiposAsistencia.stream()
-                    .filter(t -> "SIN_REGISTRO".equals(t.getNombre()))
-                    .findFirst()
-                    .orElse(null);
+                    TipoAsistencia sinRegistro = tiposAsistencia.stream()
+                            .filter(t -> "SIN_REGISTRO".equals(t.getNombre()))
+                            .findFirst()
+                            .orElse(null);
 
-            if (sinRegistro != null) {
-                select.setValue(sinRegistro);
-                String colorHex = sinRegistro.getColorHex();
-                if (colorHex != null) {
-                    select.getStyle().set("background-color", colorHex);
-                    select.getStyle().set("color", getContrastingTextColor(colorHex));  // Aseguramos que el texto sea visible
-                }
-            }
+                    if (sinRegistro != null) {
+                        select.setValue(sinRegistro);
+                        String colorHex = sinRegistro.getColorHex();
+                        if (colorHex != null) {
+                            select.getStyle().set("background-color", colorHex);
+                            select.getStyle().set("color", getContrastingTextColor(colorHex));
+                        }
+                    }
 
-            // Verificar si existe una asistencia registrada para la fecha y el empleado
-            List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
-            Asistencia asistenciaExistente = asistencias.stream()
-                    .filter(a -> a.getEmpleado().equals(empleado))
-                    .findFirst()
-                    .orElse(null);
+                    List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
+                    Asistencia asistenciaExistente = asistencias.stream()
+                            .filter(a -> a.getEmpleado().equals(empleado))
+                            .findFirst()
+                            .orElse(null);
 
-            if (asistenciaExistente != null) {
-                select.setValue(asistenciaExistente.getTipoAsistencia());
+                    if (asistenciaExistente != null) {
+                        select.setValue(asistenciaExistente.getTipoAsistencia());
 
-                // Asignar el color al cargar el valor
-                String colorHex = asistenciaExistente.getTipoAsistencia().getColorHex();
-                if (colorHex != null) {
-                    select.getStyle().set("background-color", colorHex);
-                    select.getStyle().set("color", getContrastingTextColor(colorHex));  // Aseguramos que el texto sea visible
-                }
-            }
+                        String colorHex = asistenciaExistente.getTipoAsistencia().getColorHex();
+                        if (colorHex != null) {
+                            select.getStyle().set("background-color", colorHex);
+                            select.getStyle().set("color", getContrastingTextColor(colorHex));
+                        }
+                    }
 
-            // Evento para actualizar el color cuando el usuario cambia la selección
-            select.addValueChangeListener(event -> {
-                TipoAsistencia seleccionado = event.getValue();
-                if (seleccionado != null && seleccionado.getColorHex() != null) {
-                    select.getStyle().set("background-color", seleccionado.getColorHex());
-                    select.getStyle().set("color", getContrastingTextColor(seleccionado.getColorHex()));
-                }
-            });
+                    select.addValueChangeListener(event -> {
+                        TipoAsistencia seleccionado = event.getValue();
+                        if (seleccionado != null && seleccionado.getColorHex() != null) {
+                            select.getStyle().set("background-color", seleccionado.getColorHex());
+                            select.getStyle().set("color", getContrastingTextColor(seleccionado.getColorHex()));
+                        }
+                    });
 
-            asistenciaMap.put(empleado, select);
-            return select;
-        }).setHeader("Tipo de Asistencia").setWidth("160px");
+                    asistenciaMap.put(empleado, select);
+                    return select;
+                }).setHeader("Tipo de Asistencia").setWidth("160px")
+                .setAutoWidth(true);
 
         Button todosPuntualButton = new Button("Puntual", e -> {
             tiposAsistencia.stream().filter(t -> "PUNTUAL".equals(t.getNombre())).findFirst().ifPresent(tipo -> {
                 asistenciaMap.values().forEach(select -> select.setValue(tipo));
             });
         });
-        todosPuntualButton.getStyle().set("background", "#0eb90e"); // Verde
-        todosPuntualButton.getStyle().set("color", "white"); // Verde
+        todosPuntualButton.getStyle().set("background", "#0eb90e");
+        todosPuntualButton.getStyle().set("color", "white");
 
         Button sinRegistroButton = new Button("Quitar", e -> {
             tiposAsistencia.stream().filter(t -> "SIN_REGISTRO".equals(t.getNombre())).findFirst().ifPresent(tipo -> {
                 asistenciaMap.values().forEach(select -> select.setValue(tipo));
             });
         });
-        sinRegistroButton.getStyle().set("background", "#808080"); // Gris
+        sinRegistroButton.getStyle().set("background", "#808080");
         sinRegistroButton.getStyle().set("color", "white");
 
         Button guardarButton = new Button("Guardar", e -> {
@@ -195,6 +214,7 @@ public class AsistenciaCrudView extends VerticalLayout {
             modal.close();
             actualizarGrid();
         });
+        guardarButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         Button cerrarButton = new Button("Cerrar", e -> modal.close());
 
@@ -203,9 +223,12 @@ public class AsistenciaCrudView extends VerticalLayout {
 
         VerticalLayout modalLayout = new VerticalLayout(toolbarModal, empleadoGrid);
         modalLayout.setSizeFull();
+        modalLayout.getStyle().set("padding", "0"); // Elimina el padding lateral del contenedor del Grid
+
         modal.add(modalLayout);
         modal.open();
     }
+
 
 
     private void eliminarAsistenciaPorFecha(LocalDate fecha) {
@@ -285,6 +308,7 @@ public class AsistenciaCrudView extends VerticalLayout {
             modal.close();
             actualizarGrid();
         });
+        guardarButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         Button cerrarButton = new Button("Cerrar", e -> modal.close());
 

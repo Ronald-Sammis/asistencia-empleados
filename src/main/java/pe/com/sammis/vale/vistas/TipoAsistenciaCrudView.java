@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Input;
@@ -80,20 +81,21 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
 
         addButton.addClickListener(e -> openForm(new TipoAsistencia()));
         addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        addButton.setWidth("75px");
 
         HorizontalLayout toolbar = new HorizontalLayout(addButton, searchField);
-        toolbar.setWidthFull();
-        toolbar.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        toolbar.setAlignItems(FlexComponent.Alignment.CENTER);
-        toolbar.setPadding(true);
-
         add(toolbar, grid);
     }
 
     private void configureGrid() {
 
         grid.setColumns("id", "nombre", "colorHex");
-        grid.setWidth("750px");
+        grid.getColumnByKey("id").setAutoWidth(true);
+        grid.getColumnByKey("nombre").setAutoWidth(true);
+        grid.getColumnByKey("colorHex").setAutoWidth(true);
+
+        grid.setWidth("500px");
+        grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
 
         grid.addComponentColumn(tipo -> {
             Div colorPreview = new Div();
@@ -110,21 +112,30 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
             colorPreview.getStyle().set("height", "20px");
             colorPreview.getStyle().set("border-radius", "50%");
             return colorPreview;
-        }).setHeader("Vista Previa");
+        }).setHeader("Vista")
+                .setAutoWidth(true);
 
         grid.addComponentColumn(tipo -> {
-            Button editButton = new Button("Editar");
+            Button editButton = new Button(VaadinIcon.EDIT.create());
             editButton.addClickListener(event -> openForm(tipo));
-            editButton.addThemeVariants(ButtonVariant.LUMO_WARNING);
+            editButton.getStyle()
+                    .set("background-color", "var(--lumo-warning-color)") // Fondo amarillo
+                    .set("color", "black"); // Texto negro
+            editButton.setWidth("75px");
             return editButton;
-        }).setHeader("Editar");
+        }).setHeader("Editar")
+                .setAutoWidth(true);
 
         grid.addComponentColumn(tipo -> {
-            Button deleteButton = new Button("Eliminar");
+            Button deleteButton = new Button(VaadinIcon.TRASH.create());
             deleteButton.addClickListener(event -> confirmDelete(tipo));
-            deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            deleteButton.getStyle()
+                    .set("background-color", "var(--lumo-error-color)") // Fondo amarillo
+                    .set("color", "white"); // Texto negro
+            deleteButton.setWidth("75px");
             return deleteButton;
-        }).setHeader("Eliminar");
+        }).setHeader("Eliminar")
+                .setAutoWidth(true);
     }
 
 
