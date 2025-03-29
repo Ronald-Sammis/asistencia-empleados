@@ -27,7 +27,7 @@ import pe.com.sammis.vale.repositories.TipoAsistenciaRepository;
 public class TipoAsistenciaCrudView extends VerticalLayout {
 
     private Grid<TipoAsistencia> grid = new Grid<>(TipoAsistencia.class);
-    private Button addButton = new Button( new Icon(VaadinIcon.PLUS_CIRCLE));
+    private Button addButton = new Button( "Nuevo");
     private TipoAsistenciaRepository repository;
 
     private Dialog formDialog = new Dialog();
@@ -79,6 +79,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
         searchField.setWidth("300px");
 
         addButton.addClickListener(e -> openForm(new TipoAsistencia()));
+        addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         HorizontalLayout toolbar = new HorizontalLayout(addButton, searchField);
         toolbar.setWidthFull();
@@ -90,9 +91,9 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
     }
 
     private void configureGrid() {
-        grid.getElement().getStyle().set("font-size", "12px");
+
         grid.setColumns("id", "nombre", "colorHex");
-        grid.setWidthFull();
+        grid.setWidth("750px");
 
         grid.addComponentColumn(tipo -> {
             Div colorPreview = new Div();
@@ -112,14 +113,16 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
         }).setHeader("Vista Previa");
 
         grid.addComponentColumn(tipo -> {
-            Button editButton = new Button(new Icon(VaadinIcon.EDIT));
+            Button editButton = new Button("Editar");
             editButton.addClickListener(event -> openForm(tipo));
+            editButton.addThemeVariants(ButtonVariant.LUMO_WARNING);
             return editButton;
         }).setHeader("Editar");
 
         grid.addComponentColumn(tipo -> {
-            Button deleteButton = new Button(new Icon(VaadinIcon.TRASH));
+            Button deleteButton = new Button("Eliminar");
             deleteButton.addClickListener(event -> confirmDelete(tipo));
+            deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
             return deleteButton;
         }).setHeader("Eliminar");
     }
