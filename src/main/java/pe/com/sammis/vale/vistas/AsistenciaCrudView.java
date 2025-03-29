@@ -12,6 +12,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import pe.com.sammis.vale.models.Asistencia;
 import pe.com.sammis.vale.models.Empleado;
 import pe.com.sammis.vale.models.TipoAsistencia;
@@ -58,10 +59,7 @@ public class AsistenciaCrudView extends VerticalLayout {
 
     private void configurarGrid() {
         grid.addColumn(fecha -> fecha.toString()).setHeader("Fecha");
-        grid.addComponentColumn(fecha -> {
-            Button eliminar = new Button("Eliminar", e -> eliminarAsistenciaPorFecha(fecha));
-            return new HorizontalLayout(eliminar);
-        }).setHeader("Acciones");
+        grid.addComponentColumn(fecha -> new HorizontalLayout(new Button("Eliminar", e -> eliminarAsistenciaPorFecha(fecha)))).setHeader("Acciones");
     }
 
     private void abrirModal(LocalDate fecha) {
@@ -81,41 +79,42 @@ public class AsistenciaCrudView extends VerticalLayout {
         }
 
         Dialog modal = new Dialog();
-        modal.setWidth("600px"); // Asegurar un ancho adecuado
-        modal.setMinWidth("400px"); // Evitar que sea demasiado angosto
-        modal.setHeight("auto"); // Que crezca según el contenido
+        modal.setWidth("600px");
 
         Grid<Empleado> empleadoGrid = new Grid<>(Empleado.class, false);
         empleadoGrid.setItems(empleados);
-
-        empleadoGrid.getStyle().set("max-width", "600px"); // Ancho máximo para mejor control
-
         Map<Empleado, ComboBox<TipoAsistencia>> asistenciaMap = new HashMap<>();
 
-        // Columna de nombres ajustable
-        empleadoGrid.addColumn(e -> e.getNombre() + " " + e.getApellido())
-                .setHeader("Empleado")
-                .setWidth("150px") // Fijar ancho
-                .setFlexGrow(0); // Evitar expansión
-
-        // Permitir saltos de línea en la columna "Empleado"
-        empleadoGrid.getElement().executeJs(
-                "this.shadowRoot.querySelectorAll('vaadin-grid-cell-content').forEach(el => { " +
-                        "el.style.whiteSpace = 'normal'; " +
-                        "el.style.wordBreak = 'break-word'; })"
-        );
-
-        // Ajustar el ComboBox en la columna "Tipo de Asistencia"
+        empleadoGrid.addColumn(e -> e.getNombre() + " " + e.getApellido()).setHeader("Empleado").setWidth("150px");
         empleadoGrid.addComponentColumn(empleado -> {
-                    ComboBox<TipoAsistencia> select = new ComboBox<>();
-                    select.setItems(tiposAsistencia);
-                    select.setItemLabelGenerator(TipoAsistencia::getNombre);
-                    select.setWidth("150px"); // Establecer ancho fijo para evitar que se expanda
-                    asistenciaMap.put(empleado, select);
-                    return select;
-                }).setHeader("Tipo de Asistencia")
-                .setWidth("160px") // Ajuste de columna
-                .setFlexGrow(0); // Evita expansión
+            ComboBox<TipoAsistencia> select = new ComboBox<>();
+            select.setItems(tiposAsistencia);
+            select.setItemLabelGenerator(TipoAsistencia::getNombre);
+            select.setWidth("130px");
+            select.getStyle().set("border-radius", "30px");
+            asistenciaMap.put(empleado, select);
+
+            select.addValueChangeListener(event -> {
+                TipoAsistencia seleccionado = event.getValue();
+                if (seleccionado != null && seleccionado.getColorHex() != null) {
+                    select.getStyle().set("background-color", seleccionado.getColorHex());
+                    select.getStyle().set("color", getContrastingTextColor(seleccionado.getColorHex()));
+                }
+            });
+            return select;
+        }).setHeader("Tipo de Asistencia").setWidth("160px");
+
+        Button todosPuntualButton = new Button("PUNTUAL", e -> {
+            tiposAsistencia.stream().filter(t -> "PUNTUAL".equals(t.getNombre())).findFirst().ifPresent(tipo -> {
+                asistenciaMap.values().forEach(select -> select.setValue(tipo));
+            });
+        });
+
+        Button sinRegistroButton = new Button("SIN_REGISTRO", e -> {
+            tiposAsistencia.stream().filter(t -> "SIN_REGISTRO".equals(t.getNombre())).findFirst().ifPresent(tipo -> {
+                asistenciaMap.values().forEach(select -> select.setValue(tipo));
+            });
+        });
 
         Button guardarButton = new Button("Guardar", e -> {
             asistenciaMap.forEach((empleado, comboBox) -> {
@@ -135,25 +134,29 @@ public class AsistenciaCrudView extends VerticalLayout {
 
         Button cerrarButton = new Button("Cerrar", e -> modal.close());
 
-        HorizontalLayout toolbarModal = new HorizontalLayout(guardarButton, cerrarButton);
+        HorizontalLayout toolbarModal = new HorizontalLayout(todosPuntualButton, sinRegistroButton, guardarButton, cerrarButton);
         toolbarModal.setWidthFull();
-        toolbarModal.setJustifyContentMode(JustifyContentMode.CENTER);
 
         VerticalLayout modalLayout = new VerticalLayout(toolbarModal, empleadoGrid);
         modalLayout.setSizeFull();
         modal.add(modalLayout);
-
         modal.open();
     }
 
     private void eliminarAsistenciaPorFecha(LocalDate fecha) {
-        List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
-        asistenciaRepository.deleteAll(asistencias);
+        asistenciaRepository.deleteAll(asistenciaRepository.findByFecha(fecha));
         Notification.show("Asistencias eliminadas.");
         actualizarGrid();
     }
 
     private void actualizarGrid() {
         grid.setItems(asistenciaRepository.findDistinctFechas());
+    }
+
+    private String getContrastingTextColor(String colorHex) {
+        int r = Integer.parseInt(colorHex.substring(1, 3), 16);
+        int g = Integer.parseInt(colorHex.substring(3, 5), 16);
+        int b = Integer.parseInt(colorHex.substring(5, 7), 16);
+        return (r * 0.299 + g * 0.587 + b * 0.114) > 128 ? "black" : "white";
     }
 }
