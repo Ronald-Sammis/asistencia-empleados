@@ -87,22 +87,35 @@ public class AsistenciaCrudView extends VerticalLayout {
 
         Grid<Empleado> empleadoGrid = new Grid<>(Empleado.class, false);
         empleadoGrid.setItems(empleados);
-        empleadoGrid.setWidthFull(); // Ocupar todo el ancho disponible
+
+        empleadoGrid.getStyle().set("max-width", "600px"); // Ancho máximo para mejor control
 
         Map<Empleado, ComboBox<TipoAsistencia>> asistenciaMap = new HashMap<>();
 
+        // Columna de nombres ajustable
         empleadoGrid.addColumn(e -> e.getNombre() + " " + e.getApellido())
                 .setHeader("Empleado")
-                .setAutoWidth(true)
-                .setFlexGrow(1); // Permitir que crezca dinámicamente
+                .setWidth("150px") // Fijar ancho
+                .setFlexGrow(0); // Evitar expansión
 
+        // Permitir saltos de línea en la columna "Empleado"
+        empleadoGrid.getElement().executeJs(
+                "this.shadowRoot.querySelectorAll('vaadin-grid-cell-content').forEach(el => { " +
+                        "el.style.whiteSpace = 'normal'; " +
+                        "el.style.wordBreak = 'break-word'; })"
+        );
+
+        // Ajustar el ComboBox en la columna "Tipo de Asistencia"
         empleadoGrid.addComponentColumn(empleado -> {
-            ComboBox<TipoAsistencia> select = new ComboBox<>();
-            select.setItems(tiposAsistencia);
-            select.setItemLabelGenerator(TipoAsistencia::getNombre);
-            asistenciaMap.put(empleado, select);
-            return select;
-        }).setHeader("Tipo de Asistencia").setAutoWidth(true).setFlexGrow(1);
+                    ComboBox<TipoAsistencia> select = new ComboBox<>();
+                    select.setItems(tiposAsistencia);
+                    select.setItemLabelGenerator(TipoAsistencia::getNombre);
+                    select.setWidth("150px"); // Establecer ancho fijo para evitar que se expanda
+                    asistenciaMap.put(empleado, select);
+                    return select;
+                }).setHeader("Tipo de Asistencia")
+                .setWidth("160px") // Ajuste de columna
+                .setFlexGrow(0); // Evita expansión
 
         Button guardarButton = new Button("Guardar", e -> {
             asistenciaMap.forEach((empleado, comboBox) -> {
@@ -132,13 +145,6 @@ public class AsistenciaCrudView extends VerticalLayout {
 
         modal.open();
     }
-
-
-
-
-
-
-
 
     private void eliminarAsistenciaPorFecha(LocalDate fecha) {
         List<Asistencia> asistencias = asistenciaRepository.findByFecha(fecha);
