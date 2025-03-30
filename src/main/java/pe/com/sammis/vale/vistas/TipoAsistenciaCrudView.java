@@ -8,6 +8,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Input;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -48,7 +49,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
         addClassName("main-view");
 
         this.repository = repository;
-        add(new H1("Tipos de Asistencia"));
+        add(new H2("Tipos de Asistencia"));
 
         configureColorPicker();
         configureGrid();
@@ -89,10 +90,10 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
 
     private void configureGrid() {
 
-        grid.setColumns("id", "nombre", "colorHex");
-        grid.getColumnByKey("id").setAutoWidth(true);
+        /*grid.setColumns( "nombre", "colorHex");*/
+       /* grid.getColumnByKey("id").setAutoWidth(true);*/
         grid.getColumnByKey("nombre").setAutoWidth(true);
-        grid.getColumnByKey("colorHex").setAutoWidth(true);
+       /* grid.getColumnByKey("colorHex").setAutoWidth(true);*/
 
         grid.setWidth("500px");
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);

@@ -1,0 +1,25 @@
+1. Modulo Empleados
+* mejorar el titulo: Gestión de Empleados, reducir un poco el tamaño
+* No mostrar el Id en la grilla
+* mejorar la busqueda por DNI
+* implementar el icono en la barra principal y el cerrar sesión.
+
+
+
+
+
+
+2. Modulo Tipo de Asistencia
+*revisar la funcionalidad del buscador
+*revisar el ancho del buscador
+*quitar la columna colorHex
+
+
+
+
+
+
+
+3. Modulo Asistencias
+*Agregar una etiqueta al picker de fecha: Fecha de toma de asistencia
+*Agregar los rotulos de los botones editar y elimnar(estandar en todos los modulos)

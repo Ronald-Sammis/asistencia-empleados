@@ -7,6 +7,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -46,7 +47,7 @@ public class EmpleadoCrudView extends VerticalLayout {
 
         addClassName("main-view");
         this.repository = repository;
-        add(new H1("Empleados"));
+        add(new H2("Empleados"));
         configureGrid();
         createForm();
         configureToolbar();
@@ -54,74 +55,78 @@ public class EmpleadoCrudView extends VerticalLayout {
     }
 
     private void configureToolbar() {
-        searchField.setPlaceholder("Buscar...");
-        searchField.setClearButtonVisible(true);
-        searchField.addValueChangeListener(event -> filterList(event.getValue()));
-
-        addButton.addClickListener(e -> openForm(new Empleado()));
-        addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        addButton.setWidth("75px");
+        configureSearchField();
+        configureAddButton();
 
         HorizontalLayout toolbar = new HorizontalLayout(addButton, searchField);
         add(toolbar, grid);
     }
 
-    private void configureGrid() {
-
-        grid.setWidth("525px");
-
-        grid.setColumns("id"); // Solo ID como columna directa
-        grid.getColumnByKey("id").setAutoWidth(true); // Cambia el valor según necesites
-
-
-        grid.addColumn(persona -> persona.getNombre() + " " + persona.getApellido())
-                .setHeader("Nombres")
-                .setAutoWidth(true)
-                .setFlexGrow(0); // Evita que la columna crezca demasiado
-
-
-
-
-        grid.addComponentColumn(empleado -> {
-            Button editButton = new Button(VaadinIcon.EDIT.create()); // Botón con icono de edición
-            editButton.addClickListener(event -> openForm(empleado)); // Acción al hacer clic
-            editButton.setWidth("75px");
-
-            // Estilos: fondo amarillo y texto negro
-            editButton.getStyle()
-                    .set("background-color", "var(--lumo-warning-color)")
-                    .set("color", "black");
-
-            return editButton;
-        }).setHeader("Editar")
-                .setAutoWidth(true);
-
-
-        grid.addComponentColumn(empleado -> {
-            Button deleteButton = new Button(VaadinIcon.TRASH.create()); // Botón con icono de papelera
-            deleteButton.setWidth("75px");
-            deleteButton.addClickListener(event -> confirmDelete(empleado)); // Acción al hacer clic
-
-            // Estilos: fondo rojo y texto blanco
-            deleteButton.getStyle()
-                    .set("background-color", "var(--lumo-error-color)")
-                    .set("color", "white");
-
-            return deleteButton;
-        }).setHeader("Eliminar")
-                .setAutoWidth(true);
-
-        grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
-
-
-
+    private void configureSearchField() {
+        searchField.setPlaceholder("Buscar...");
+        searchField.setClearButtonVisible(true);
+        searchField.setWidth("300px");
+        searchField.addValueChangeListener(event -> filterList(event.getValue()));
     }
+
+    private void configureAddButton() {
+        addButton.setText("Nuevo");
+        addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        addButton.setWidth("75px");
+        addButton.addClickListener(e -> openForm(new Empleado()));
+    }
+
+
+    private void configureGrid() {
+        configureGridProperties();
+        addDataColumns();
+        addActionColumns();
+    }
+
+    private void configureGridProperties() {
+        grid.setWidth("525px");
+        grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
+        grid.setColumns(); // Evita que Vaadin agregue columnas automáticamente
+    }
+
+    private void addDataColumns() {
+        grid.addColumn(Empleado::getId).setHeader("ID").setAutoWidth(true);
+        grid.addColumn(empleado -> empleado.getNombre() + " " + empleado.getApellido())
+                .setHeader("Nombres")
+                .setAutoWidth(true);
+    }
+
+    private void addActionColumns() {
+        grid.addComponentColumn(this::createEditButton).setHeader("Editar").setAutoWidth(true);
+        grid.addComponentColumn(this::createDeleteButton).setHeader("Eliminar").setAutoWidth(true);
+    }
+
+    private Button createEditButton(Empleado empleado) {
+        Button editButton = new Button(VaadinIcon.EDIT.create());
+        editButton.addClickListener(event -> openForm(empleado));
+        styleButton(editButton, "var(--lumo-warning-color)", "black");
+        return editButton;
+    }
+
+    private Button createDeleteButton(Empleado empleado) {
+        Button deleteButton = new Button(VaadinIcon.TRASH.create());
+        deleteButton.addClickListener(event -> confirmDelete(empleado));
+        styleButton(deleteButton, "var(--lumo-error-color)", "white");
+        return deleteButton;
+    }
+
+    private void styleButton(Button button, String bgColor, String textColor) {
+        button.setWidth("75px");
+        button.getStyle()
+                .set("background-color", bgColor)
+                .set("color", textColor);
+    }
+
 
     private void createForm() {
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveButton.addClickListener(e -> saveEmpleado());
         cancelButton.addClickListener(e -> formDialog.close());
-
         VerticalLayout formLayout = new VerticalLayout(nombreField, apellidoField, new HorizontalLayout(saveButton, cancelButton));
         formDialog.add(formLayout);
     }
@@ -136,24 +141,33 @@ public class EmpleadoCrudView extends VerticalLayout {
 
     private void saveEmpleado() {
         if (nombreField.isEmpty() || apellidoField.isEmpty()) {
-            if (!notificationShown) {
-                Notification notification = Notification.show("Por favor, complete los campos obligatorios.", 3000, Notification.Position.BOTTOM_CENTER);
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-                notification.addOpenedChangeListener(event -> notificationShown = false);
-                notificationShown = true;
-            }
-        } else {
-            currentEmpleado.setNombre(nombreField.getValue());
-            currentEmpleado.setApellido(apellidoField.getValue());
-            repository.save(currentEmpleado);
-            updateList();
-            formDialog.close();
-            notificationShown = false; // Reset para permitir nuevas notificaciones
-            Notification notification = Notification.show("Empleado guardado correctamente: " + currentEmpleado.getNombre().toUpperCase() + " " + currentEmpleado.getApellido().toUpperCase(), 3000, Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            showNotification("Por favor, complete los campos obligatorios.", NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
+        currentEmpleado.setNombre(nombreField.getValue());
+        currentEmpleado.setApellido(apellidoField.getValue());
+
+        repository.save(currentEmpleado);
+        updateList();
+        formDialog.close();
+        notificationShown = false; // Reset para permitir nuevas notificaciones
+
+        showNotification("Empleado guardado correctamente: " +
+                        currentEmpleado.getNombre().toUpperCase() + " " +
+                        currentEmpleado.getApellido().toUpperCase(),
+                NotificationVariant.LUMO_SUCCESS);
+    }
+
+    private void showNotification(String message, NotificationVariant variant) {
+        if (!notificationShown) {
+            Notification notification = Notification.show(message, 3000, Notification.Position.BOTTOM_CENTER);
+            notification.addThemeVariants(variant);
             notification.addOpenedChangeListener(event -> notificationShown = false);
+            notificationShown = true;
         }
     }
+
 
     private void confirmDelete(Empleado empleado) {
         confirmDialog.removeAll();

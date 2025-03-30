@@ -8,6 +8,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -44,11 +45,12 @@ public class AsistenciaCrudView extends VerticalLayout {
     public AsistenciaCrudView(AsistenciaRepository asistenciaRepository,
                               EmpleadoRepository empleadoRepository,
                               TipoAsistenciaRepository tipoAsistenciaRepository) {
+        addClassName("main-view");
         this.asistenciaRepository = asistenciaRepository;
         this.empleadoRepository = empleadoRepository;
         this.tipoAsistenciaRepository = tipoAsistenciaRepository;
 
-        add(new H1("Asistencia"));
+        add(new H2("Registro de asistencias"));
         configurarBarraHerramientas();
         configurarGrid();
         add(grid);

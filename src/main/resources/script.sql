@@ -3,9 +3,9 @@
 INSERT INTO TB_TIPO_ASISTENCIAS (nombre, color_hex) VALUES
 
 ('PUNTUAL', '#008000'),
-    ('TARDE', '#FFA500'),
-        ('FALTA', '#FF0000'),
-    ('J-MEDICA', '#0000FF'),
+('TARDE', '#FFA500'),
+('FALTA', '#FF0000'),
+('J-MEDICA', '#0000FF'),
 ('J-OTROS', '#FF1493'),
 ('VACACIONES', '#808080'),
 ('SIN_REGISTRO', '#808080');
