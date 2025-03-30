@@ -90,10 +90,9 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
 
     private void configureGrid() {
 
-        /*grid.setColumns( "nombre", "colorHex");*/
-       /* grid.getColumnByKey("id").setAutoWidth(true);*/
+        grid.setColumns( "nombre");
         grid.getColumnByKey("nombre").setAutoWidth(true);
-       /* grid.getColumnByKey("colorHex").setAutoWidth(true);*/
+
 
         grid.setWidth("500px");
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);

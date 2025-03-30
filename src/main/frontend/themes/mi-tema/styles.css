@@ -1,17 +1,4 @@
-
-
 html {
-    --lumo-border-radius: calc(var(--lumo-size-m) / 2);
-    --lumo-size-xl: 2.5rem;
-    --lumo-size-l: 2rem;
-    --lumo-size-m: 1.75rem;
-    --lumo-size-s: 1.5rem;
-    --lumo-size-xs: 1.25rem;
-    --lumo-space-xl: 1.875rem;
-    --lumo-space-l: 1.25rem;
-    --lumo-space-m: 0.625rem;
-    --lumo-space-s: 0.3125rem;
-    --lumo-space-xs: 0.1875rem;
     --lumo-font-size: 1rem;
     --lumo-font-size-xxxl: 1.75rem;
     --lumo-font-size-xxl: 1.375rem;
@@ -21,18 +8,29 @@ html {
     --lumo-font-size-s: 0.8125rem;
     --lumo-font-size-xs: 0.75rem;
     --lumo-font-size-xxs: 0.6875rem;
+    --lumo-border-radius: 0.5em;
+    --lumo-size-xl: 3rem;
+    --lumo-size-l: 2.5rem;
+    --lumo-size-m: 2rem;
+    --lumo-size-s: 1.75rem;
+    --lumo-size-xs: 1.5rem;
+    --lumo-space-xl: 1.875rem;
+    --lumo-space-l: 1.25rem;
+    --lumo-space-m: 0.625rem;
+    --lumo-space-s: 0.3125rem;
+    --lumo-space-xs: 0.1875rem;
     --lumo-primary-text-color: rgb(114, 22, 243);
     --lumo-primary-color-50pct: rgba(114, 22, 243, 0.5);
     --lumo-primary-color-10pct: rgba(114, 22, 243, 0.1);
-    --lumo-error-text-color: rgb(255, 56, 103);
-    --lumo-error-color-50pct: rgba(255, 56, 103, 0.5);
-    --lumo-error-color-10pct: rgba(255, 56, 103, 0.1);
-    --lumo-success-text-color: rgb(20, 184, 143);
-    --lumo-success-color-50pct: rgba(20, 184, 143, 0.5);
-    --lumo-success-color-10pct: rgba(20, 184, 143, 0.1);
+    --lumo-error-text-color: rgb(244, 16, 69);
+    --lumo-error-color-50pct: rgba(244, 16, 69, 0.5);
+    --lumo-error-color-10pct: rgba(244, 16, 69, 0.1);
+    --lumo-success-text-color: rgb(39, 165, 49);
+    --lumo-success-color-50pct: rgba(39, 165, 49, 0.5);
+    --lumo-success-color-10pct: rgba(39, 165, 49, 0.1);
     --lumo-primary-color: hsl(265, 90%, 52%);
-    --lumo-error-color: hsl(346, 100%, 61%);
-    --lumo-success-color: hsl(165, 80%, 40%);
+    --lumo-error-color: hsl(346, 91%, 51%);
+    --lumo-success-color: hsl(125, 62%, 40%);
     --lumo-header-text-color: hsl(285, 35%, 15%);
     --lumo-body-text-color: hsla(285, 40%, 16%, 0.94);
     --lumo-secondary-text-color: hsla(285, 42%, 18%, 0.72);
@@ -41,6 +39,35 @@ html {
 }
 
 [theme~="dark"] {
+}
+
+/* Estilos para los botones */
+vaadin-button:not([theme~="tertiary"]) {
+    background-image: linear-gradient(var(--lumo-tint-5pct), var(--lumo-shade-5pct));
+    box-shadow: inset 0 0 0 1px var(--lumo-contrast-20pct);
+}
+
+/* Estilos para los botones sin fondo (Cancelar) */
+vaadin-button[theme~="tertiary"] {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--lumo-contrast-30pct);
+    color: var(--lumo-body-text-color);
+}
+
+/* Sombra para los botones primarios */
+vaadin-button[theme~="primary"] {
+    text-shadow: 0 -1px 0 var(--lumo-shade-20pct);
+}
+
+/* Estilos para los campos de texto */
+vaadin-text-field::part(input-field) {
+    box-shadow: inset 0 0 0 1px var(--lumo-contrast-30pct);
+    background-color: var(--lumo-base-color);
+}
+
+/* Estilo cuando un campo de texto es inválido */
+vaadin-text-field[invalid]::part(input-field) {
+    box-shadow: inset 0 0 0 1px var(--lumo-error-color);
 }
 
 
