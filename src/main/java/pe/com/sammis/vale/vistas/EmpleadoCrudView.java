@@ -30,7 +30,6 @@ public class EmpleadoCrudView extends VerticalLayout {
     private Grid<Empleado> grid = new Grid<>(Empleado.class);
     private Button addButton = new Button("Nuevo");
     private EmpleadoRepository repository;
-
     private Dialog formDialog = new Dialog();
     private Dialog confirmDialog = new Dialog();
     private TextField nombreField = new TextField("Nombre");
@@ -39,7 +38,6 @@ public class EmpleadoCrudView extends VerticalLayout {
     private Button cancelButton = new Button("Cancelar");
     private Empleado currentEmpleado;
     private boolean notificationShown = false;
-
     private TextField searchField = new TextField();
 
     @Autowired
@@ -57,7 +55,6 @@ public class EmpleadoCrudView extends VerticalLayout {
     private void configureToolbar() {
         configureSearchField();
         configureAddButton();
-
         HorizontalLayout toolbar = new HorizontalLayout(addButton, searchField);
         add(toolbar, grid);
     }
@@ -65,7 +62,7 @@ public class EmpleadoCrudView extends VerticalLayout {
     private void configureSearchField() {
         searchField.setPlaceholder("Buscar...");
         searchField.setClearButtonVisible(true);
-        searchField.setWidth("300px");
+        searchField.setWidth("250px");
         searchField.addValueChangeListener(event -> filterList(event.getValue()));
     }
 
@@ -169,7 +166,8 @@ public class EmpleadoCrudView extends VerticalLayout {
     }
 
 
-    private void confirmDelete(Empleado empleado) {
+    private void
+    confirmDelete(Empleado empleado) {
         confirmDialog.removeAll();
         confirmDialog.add("¿Está seguro de que desea eliminar este empleado?");
 

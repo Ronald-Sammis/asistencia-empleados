@@ -72,9 +72,9 @@ vaadin-text-field[invalid]::part(input-field) {
 
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "Helvetica Neue", Arial, sans-serif;
 }
+
 
 
 /*efecto de presentación de las vistas*/

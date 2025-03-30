@@ -78,7 +78,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
     private void configureToolbar() {
         searchField.setPlaceholder("Buscar...");
         searchField.setClearButtonVisible(true);
-        searchField.setWidth("300px");
+        searchField.setWidth("250px");
 
         addButton.addClickListener(e -> openForm(new TipoAsistencia()));
         addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -94,7 +94,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
         grid.getColumnByKey("nombre").setAutoWidth(true);
 
 
-        grid.setWidth("500px");
+        grid.setWidth("350px");
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
 
         grid.addComponentColumn(tipo -> {
@@ -112,7 +112,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
             colorPreview.getStyle().set("height", "20px");
             colorPreview.getStyle().set("border-radius", "50%");
             return colorPreview;
-        }).setHeader("Vista")
+        }).setHeader("Color")
                 .setAutoWidth(true);
 
         grid.addComponentColumn(tipo -> {

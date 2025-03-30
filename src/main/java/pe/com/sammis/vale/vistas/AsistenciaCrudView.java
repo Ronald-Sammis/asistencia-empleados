@@ -34,6 +34,8 @@ import java.util.Map;
 @PageTitle("Gestión de Asistencias")
 public class AsistenciaCrudView extends VerticalLayout {
 
+    private Dialog confirmDialog = new Dialog();
+    private boolean notificationShown = false;
     private final AsistenciaRepository asistenciaRepository;
     private final EmpleadoRepository empleadoRepository;
     private final TipoAsistenciaRepository tipoAsistenciaRepository;
@@ -67,34 +69,49 @@ public class AsistenciaCrudView extends VerticalLayout {
     }
 
     private void configurarGrid() {
+        configureGridProperties();
+        addDataColumns();
+        addActionColumns();
+    }
+
+    private void configureGridProperties() {
         grid.setWidth("275px");
-        grid.addColumn(fecha -> fecha.toString()).setHeader("Fecha")
-                .setAutoWidth(true) // Puedes cambiar el valor según lo necesites
-                .setFlexGrow(0); // Evita que la columna cambie de tamaño automáticamente
-
-        grid.addComponentColumn(fecha -> {
-            Button editarButton = new Button(VaadinIcon.EDIT.create());
-            editarButton.addClickListener(e -> abrirModalEditar(fecha));
-            editarButton.getStyle()
-                    .set("background-color", "var(--lumo-warning-color)") // Fondo amarillo
-                    .set("color", "black"); // Texto negro
-
-            editarButton.setWidth("75px");
-
-            Button eliminarButton = new Button(VaadinIcon.TRASH.create());
-            eliminarButton.addClickListener(e -> eliminarAsistenciaPorFecha(fecha));
-            eliminarButton.getStyle()
-                    .set("background-color", "var(--lumo-error-color)") // Fondo amarillo
-                    .set("color", "white"); // Texto negro
-            eliminarButton.setWidth("75px");
-
-            return new HorizontalLayout(editarButton, eliminarButton);
-        }).setHeader("Acciones")
-                .setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
+        grid.setColumns();
+    }
+
+    private void addDataColumns() {
+        grid.addColumn(fecha -> fecha.toString()).setHeader("Fecha")
+                .setAutoWidth(true);
+
+    }
+
+    private void addActionColumns() {
+        grid.addComponentColumn(this::createEditButton).setHeader("Editar").setAutoWidth(true);
+        grid.addComponentColumn(this::createDeleteButton).setHeader("Eliminar").setAutoWidth(true);
+    }
+
+    private Button createEditButton(LocalDate fecha) {
+        Button editButton = new Button(VaadinIcon.EDIT.create());
+        editButton.addClickListener(event -> abrirModalEditar(fecha)); // Usamos la fecha de la asistencia
+        styleButton(editButton, "var(--lumo-warning-color)", "black");
+        return editButton;
+    }
+
+    private Button createDeleteButton(LocalDate fecha) {
+        Button deleteButton = new Button(VaadinIcon.TRASH.create());
+        deleteButton.addClickListener(event -> eliminarAsistenciaPorFecha(fecha)); // Usamos la fecha de la asistencia
+        styleButton(deleteButton, "var(--lumo-error-color)", "white");
+        return deleteButton;
     }
 
 
+    private void styleButton(Button button, String bgColor, String textColor) {
+        button.setWidth("75px");
+        button.getStyle()
+                .set("background-color", bgColor)
+                .set("color", textColor);
+    }
 
 
     private void abrirModalRegistrar(LocalDate fecha) {
@@ -234,9 +251,31 @@ public class AsistenciaCrudView extends VerticalLayout {
 
 
     private void eliminarAsistenciaPorFecha(LocalDate fecha) {
-        asistenciaRepository.deleteAll(asistenciaRepository.findByFecha(fecha));
+        /*asistenciaRepository.deleteAll(asistenciaRepository.findByFecha(fecha));
         Notification.show("Asistencias eliminadas.");
-        actualizarGrid();
+        actualizarGrid();*/
+
+
+        confirmDialog.removeAll();
+        confirmDialog.add("¿Está seguro de que desea eliminar esta asistencia:? " + fecha);
+
+        Button confirmButton = new Button("Sí", event -> {
+            asistenciaRepository.deleteAll(asistenciaRepository.findByFecha(fecha));
+            updateList();
+            confirmDialog.close();
+            notificationShown = false; // Reset para permitir nuevas notificaciones
+            Notification notification = Notification.show("Asistencia eliminado:" + fecha, 3000, Notification.Position.BOTTOM_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            notification.addOpenedChangeListener(e -> notificationShown = false);
+        });
+        confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button cancelButton = new Button("No", event -> confirmDialog.close());
+        confirmDialog.add(new HorizontalLayout(confirmButton, cancelButton));
+        confirmDialog.open();
+
+
+
     }
 
     private void actualizarGrid() {
@@ -321,6 +360,10 @@ public class AsistenciaCrudView extends VerticalLayout {
         modalLayout.setSizeFull();
         modal.add(modalLayout);
         modal.open();
+    }
+
+    private void updateList() {
+        grid.setItems(asistenciaRepository.findDistinctFechas());
     }
 
 
