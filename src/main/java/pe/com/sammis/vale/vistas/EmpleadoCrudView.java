@@ -47,7 +47,7 @@ public class EmpleadoCrudView extends VerticalLayout {
 
         addClassName("main-view");
         this.repository = repository;
-        add(new H2("Empleados"));
+        add(new H2("Registro de empleados"));
         configureGrid();
         createForm();
         configureToolbar();

@@ -39,8 +39,8 @@ public class MainLayout extends AppLayout {
         sidebar.setSpacing(true);
 
         // Links de navegación
-        RouterLink empleadoView = new RouterLink("Empleado", EmpleadoCrudView.class);
-        RouterLink tipoView = new RouterLink("Tipos de asistencias", TipoAsistenciaCrudView.class);
+        RouterLink empleadoView = new RouterLink("Registro de empleados", EmpleadoCrudView.class);
+        RouterLink tipoView = new RouterLink("Tipos de asistencia", TipoAsistenciaCrudView.class);
         RouterLink portalView = new RouterLink("MainView", MainView.class);
         RouterLink asistenciaView = new RouterLink("Registro de asistencias", AsistenciaCrudView.class);
 

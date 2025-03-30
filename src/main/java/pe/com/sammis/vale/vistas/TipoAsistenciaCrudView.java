@@ -49,7 +49,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
         addClassName("main-view");
 
         this.repository = repository;
-        add(new H2("Tipos de Asistencia"));
+        add(new H2("Tipos de asistencia"));
 
         configureColorPicker();
         configureGrid();
