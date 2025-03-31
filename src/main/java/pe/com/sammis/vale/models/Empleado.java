@@ -20,12 +20,14 @@ public class Empleado {
     @Column(nullable = false, length = 50)
     private String apellido;
 
+    @Column(nullable = false, length = 8, unique = true)
+    private String dni;
+
     @OneToMany(mappedBy = "empleado", cascade = CascadeType.ALL)
     private List<Asistencia> asistencias;
 
     public Empleado() {
     }
-
 
     public Long getId() {
         return id;
@@ -51,5 +53,19 @@ public class Empleado {
         this.apellido = apellido;
     }
 
+    public String getDni() {
+        return dni;
+    }
 
+    public void setDni(String dni) {
+        this.dni = dni;
+    }
+
+    public List<Asistencia> getAsistencias() {
+        return asistencias;
+    }
+
+    public void setAsistencias(List<Asistencia> asistencias) {
+        this.asistencias = asistencias;
+    }
 }

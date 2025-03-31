@@ -73,6 +73,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20210307</version> <!-- Puedes usar la última versión disponible -->
+        </dependency>
+
+
     </dependencies>
 
     <dependencyManagement>

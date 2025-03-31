@@ -77,8 +77,13 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
 
     private void configureToolbar() {
         searchField.setPlaceholder("Buscar...");
+        searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
         searchField.setClearButtonVisible(true);
+
         searchField.setWidth("250px");
+
+
+        searchField.addValueChangeListener(event -> filterList(event.getValue()));
 
         addButton.addClickListener(e -> openForm(new TipoAsistencia()));
         addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -224,9 +229,13 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
 
     private void filterList(String searchTerm) {
         ListDataProvider<TipoAsistencia> dataProvider = (ListDataProvider<TipoAsistencia>) grid.getDataProvider();
+
+        if (dataProvider == null) {
+            System.err.println("⚠️ DataProvider no está configurado en el grid.");
+            return;
+        }
         dataProvider.setFilter(tipoAsistencia ->
-                tipoAsistencia.getNombre().toLowerCase().contains(searchTerm.toLowerCase()) ||
-                        tipoAsistencia.getColorHex().toLowerCase().contains(searchTerm.toLowerCase()));
+                tipoAsistencia.getNombre().toLowerCase().contains(searchTerm.toLowerCase()));
         grid.getDataProvider().refreshAll();
     }
 }

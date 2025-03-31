@@ -29,7 +29,7 @@ html {
     --lumo-success-color-50pct: rgba(39, 165, 49, 0.5);
     --lumo-success-color-10pct: rgba(39, 165, 49, 0.1);
     --lumo-primary-color: hsl(265, 90%, 52%);
-    --lumo-error-color: hsl(346, 91%, 51%);
+    --lumo-error-color: hsl(356, 98%, 52%);
     --lumo-success-color: hsl(125, 62%, 40%);
     --lumo-header-text-color: hsl(285, 35%, 15%);
     --lumo-body-text-color: hsla(285, 40%, 16%, 0.94);
@@ -95,6 +95,17 @@ body {
         transform: translateX(0);
     }
 }
+
+.custom-toast {
+    background: linear-gradient(to right, #2E7D32, #4CAF50); /* Verde degradado */
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+    opacity: 0.9;
+}
+
 
 
 

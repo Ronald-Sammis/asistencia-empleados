@@ -19,9 +19,16 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.Lumo;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import pe.com.sammis.vale.models.Empleado;
 import pe.com.sammis.vale.repositories.EmpleadoRepository;
+import pe.com.sammis.vale.services.APISunatServiceImpl;
+import org.json.JSONObject;
+
+import java.util.Optional;
+
 
 @CssImport("./themes/mi-tema/styles.css")
 @Route(value = "empleado", layout = MainLayout.class)
@@ -34,17 +41,21 @@ public class EmpleadoCrudView extends VerticalLayout {
     private Dialog confirmDialog = new Dialog();
     private TextField nombreField = new TextField("Nombre");
     private TextField apellidoField = new TextField("Apellido");
+    private TextField dniField = new TextField("DNI");
     private Button saveButton = new Button("Guardar");
     private Button cancelButton = new Button("Cancelar");
     private Empleado currentEmpleado;
     private boolean notificationShown = false;
     private TextField searchField = new TextField();
+    private TextField searchFieldDni = new TextField();
+    private APISunatServiceImpl apiSunatService;
 
     @Autowired
-    public EmpleadoCrudView(EmpleadoRepository repository) {
+    public EmpleadoCrudView(EmpleadoRepository repository, APISunatServiceImpl apiSunatService) {
 
         addClassName("main-view");
         this.repository = repository;
+        this.apiSunatService = apiSunatService;
         add(new H2("Registro de empleados"));
         configureGrid();
         createForm();
@@ -61,6 +72,7 @@ public class EmpleadoCrudView extends VerticalLayout {
 
     private void configureSearchField() {
         searchField.setPlaceholder("Buscar...");
+        searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
         searchField.setClearButtonVisible(true);
         searchField.setWidth("250px");
         searchField.addValueChangeListener(event -> filterList(event.getValue()));
@@ -87,7 +99,7 @@ public class EmpleadoCrudView extends VerticalLayout {
     }
 
     private void addDataColumns() {
-        grid.addColumn(Empleado::getId).setHeader("ID").setAutoWidth(true);
+        grid.addColumn("dni").setAutoWidth(true);
         grid.addColumn(empleado -> empleado.getNombre() + " " + empleado.getApellido())
                 .setHeader("Nombres")
                 .setAutoWidth(true);
@@ -121,14 +133,37 @@ public class EmpleadoCrudView extends VerticalLayout {
 
 
     private void createForm() {
+        // Campo de búsqueda con icono de lupa
+        TextField searchFieldDni = new TextField();
+        searchFieldDni.setPlaceholder("Ingrese DNI...");
+        searchFieldDni.setClearButtonVisible(true);
+        searchFieldDni.setPrefixComponent(new Icon(VaadinIcon.SEARCH)); // Icono de lupa
+        searchFieldDni.addValueChangeListener(e -> buscarDatosPorDNI(e.getValue())); // Llamada automática
+
+        // Botones
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveButton.addClickListener(e -> saveEmpleado());
         cancelButton.addClickListener(e -> formDialog.close());
-        VerticalLayout formLayout = new VerticalLayout(nombreField, apellidoField, new HorizontalLayout(saveButton, cancelButton));
+
+        // Layout del formulario
+        VerticalLayout formLayout = new VerticalLayout(
+                searchFieldDni,  // Campo de búsqueda con lupa
+                dniField,
+                nombreField,
+                apellidoField,
+                new HorizontalLayout(saveButton, cancelButton)
+        );
+
         formDialog.add(formLayout);
     }
 
+
     private void openForm(Empleado empleado) {
+        searchFieldDni.clear();
+        dniField.clear();
+        nombreField.clear();
+        apellidoField.clear();
+
         currentEmpleado = empleado;
         nombreField.setValue(empleado.getNombre() != null ? empleado.getNombre() : "");
         apellidoField.setValue(empleado.getApellido() != null ? empleado.getApellido() : "");
@@ -137,24 +172,41 @@ public class EmpleadoCrudView extends VerticalLayout {
     }
 
     private void saveEmpleado() {
-        if (nombreField.isEmpty() || apellidoField.isEmpty()) {
+        if (nombreField.isEmpty() || apellidoField.isEmpty() || dniField.isEmpty()) {
             showNotification("Por favor, complete los campos obligatorios.", NotificationVariant.LUMO_ERROR);
             return;
         }
 
+        String dni = dniField.getValue();
+
+        // Verificamos si ya existe un empleado con el mismo DNI
+        Optional<Empleado> existingEmpleado = repository.findByDni(dni);
+        if (existingEmpleado.isPresent()) {
+            // Si ya existe un empleado con ese DNI, mostramos un mensaje de error
+            showNotification("El DNI ya está registrado. Por favor, ingrese un DNI único.", NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
+        // Si el DNI no existe, asignamos los valores al empleado actual
+        currentEmpleado.setDni(dni);
         currentEmpleado.setNombre(nombreField.getValue());
         currentEmpleado.setApellido(apellidoField.getValue());
 
+        // Guardamos el empleado
         repository.save(currentEmpleado);
+
+        // Actualizamos la lista y cerramos el formulario
         updateList();
         formDialog.close();
         notificationShown = false; // Reset para permitir nuevas notificaciones
 
+        // Mostramos la notificación de éxito
         showNotification("Empleado guardado correctamente: " +
                         currentEmpleado.getNombre().toUpperCase() + " " +
                         currentEmpleado.getApellido().toUpperCase(),
                 NotificationVariant.LUMO_SUCCESS);
     }
+
 
     private void showNotification(String message, NotificationVariant variant) {
         if (!notificationShown) {
@@ -203,4 +255,35 @@ public class EmpleadoCrudView extends VerticalLayout {
             grid.getDataProvider().refreshAll();
         }
     }
+
+
+    private void buscarDatosPorDNI(String dni) {
+
+
+        if (dni.length() == 8) {
+            try {
+                String responseData = apiSunatService.consultarDocumento(dni); // Llamar al Service
+                if (responseData != null) {
+                    try {
+                        JSONObject json = new JSONObject(responseData);
+                        dniField.setValue(dni);
+                        nombreField.setValue(json.optString("nombres", ""));
+                        apellidoField.setValue(json.optString("apellidoPaterno", "") + " " + json.optString("apellidoMaterno", ""));
+                    } catch (JSONException e) {
+                        Notification.show("Error al procesar la respuesta del servidor. Respuesta no es válida.", 3000, Notification.Position.MIDDLE);
+                        e.printStackTrace();
+                    }
+                } else {
+                    Notification.show("No se encontraron datos", 3000, Notification.Position.MIDDLE);
+                }
+            } catch (Exception e) {
+                Notification.show("Hubo un error al realizar la consulta", 3000, Notification.Position.MIDDLE);
+                e.printStackTrace();
+            }
+        } else {
+            Notification.show("El DNI debe tener 8 caracteres", 3000, Notification.Position.MIDDLE);
+        }
+    }
+
+
 }
