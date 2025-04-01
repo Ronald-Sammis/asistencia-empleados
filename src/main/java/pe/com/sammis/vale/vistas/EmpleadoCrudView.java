@@ -26,6 +26,7 @@ import pe.com.sammis.vale.models.Empleado;
 import pe.com.sammis.vale.repositories.EmpleadoRepository;
 import pe.com.sammis.vale.services.APISunatServiceImpl;
 import org.json.JSONObject;
+import pe.com.sammis.vale.services.IEmpleadoService;
 
 import java.util.Optional;
 
@@ -36,7 +37,7 @@ public class EmpleadoCrudView extends VerticalLayout {
 
     private Grid<Empleado> grid = new Grid<>(Empleado.class);
     private Button addButton = new Button("Nuevo");
-    private EmpleadoRepository repository;
+    private IEmpleadoService empleadoService;
     private Dialog formDialog = new Dialog();
     private Dialog confirmDialog = new Dialog();
     private TextField nombreField = new TextField("Nombre");
@@ -51,14 +52,14 @@ public class EmpleadoCrudView extends VerticalLayout {
     private APISunatServiceImpl apiSunatService;
 
     @Autowired
-    public EmpleadoCrudView(EmpleadoRepository repository, APISunatServiceImpl apiSunatService) {
+    public EmpleadoCrudView(IEmpleadoService empleadoService, APISunatServiceImpl apiSunatService) {
 
         addClassName("main-view");
-        this.repository = repository;
+        this.empleadoService = empleadoService;
         this.apiSunatService = apiSunatService;
         add(new H2("Registro de empleados"));
         configureGrid();
-        createForm();
+        registrarform();
         configureToolbar();
         updateList();
     }
@@ -82,7 +83,7 @@ public class EmpleadoCrudView extends VerticalLayout {
         addButton.setText("Nuevo");
         addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         addButton.setWidth("75px");
-        addButton.addClickListener(e -> openForm(new Empleado()));
+        addButton.addClickListener(e -> editarForm(new Empleado()));
     }
 
 
@@ -112,14 +113,14 @@ public class EmpleadoCrudView extends VerticalLayout {
 
     private Button createEditButton(Empleado empleado) {
         Button editButton = new Button(VaadinIcon.EDIT.create());
-        editButton.addClickListener(event -> openForm(empleado));
+        editButton.addClickListener(event -> editarForm(empleado));
         styleButton(editButton, "var(--lumo-warning-color)", "black");
         return editButton;
     }
 
     private Button createDeleteButton(Empleado empleado) {
         Button deleteButton = new Button(VaadinIcon.TRASH.create());
-        deleteButton.addClickListener(event -> confirmDelete(empleado));
+        deleteButton.addClickListener(event -> eliminarForm(empleado));
         styleButton(deleteButton, "var(--lumo-error-color)", "white");
         return deleteButton;
     }
@@ -132,38 +133,21 @@ public class EmpleadoCrudView extends VerticalLayout {
     }
 
 
-    private void createForm() {
-        // Campo de búsqueda con icono de lupa
+    private void registrarform() {
         TextField searchFieldDni = new TextField();
         searchFieldDni.setPlaceholder("Ingrese DNI...");
         searchFieldDni.setClearButtonVisible(true);
-        searchFieldDni.setPrefixComponent(new Icon(VaadinIcon.SEARCH)); // Icono de lupa
-        searchFieldDni.addValueChangeListener(e -> buscarDatosPorDNI(e.getValue())); // Llamada automática
-
-        // Botones
+        searchFieldDni.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
+        searchFieldDni.addValueChangeListener(e -> buscarDatosPorDNI(e.getValue()));
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveButton.addClickListener(e -> saveEmpleado());
         cancelButton.addClickListener(e -> formDialog.close());
-
-        // Layout del formulario
-        VerticalLayout formLayout = new VerticalLayout(
-                searchFieldDni,  // Campo de búsqueda con lupa
-                dniField,
-                nombreField,
-                apellidoField,
-                new HorizontalLayout(saveButton, cancelButton)
-        );
-
+        VerticalLayout formLayout = new VerticalLayout(searchFieldDni,dniField, nombreField, apellidoField, new HorizontalLayout(saveButton, cancelButton));
         formDialog.add(formLayout);
     }
 
 
-    private void openForm(Empleado empleado) {
-        searchFieldDni.clear();
-        dniField.clear();
-        nombreField.clear();
-        apellidoField.clear();
-
+    private void editarForm(Empleado empleado) {
         currentEmpleado = empleado;
         nombreField.setValue(empleado.getNombre() != null ? empleado.getNombre() : "");
         apellidoField.setValue(empleado.getApellido() != null ? empleado.getApellido() : "");
@@ -180,7 +164,7 @@ public class EmpleadoCrudView extends VerticalLayout {
         String dni = dniField.getValue();
 
         // Verificamos si ya existe un empleado con el mismo DNI
-        Optional<Empleado> existingEmpleado = repository.findByDni(dni);
+        Optional<Empleado> existingEmpleado = empleadoService.findByDni(dni);
         if (existingEmpleado.isPresent()) {
             // Si ya existe un empleado con ese DNI, mostramos un mensaje de error
             showNotification("El DNI ya está registrado. Por favor, ingrese un DNI único.", NotificationVariant.LUMO_ERROR);
@@ -193,7 +177,7 @@ public class EmpleadoCrudView extends VerticalLayout {
         currentEmpleado.setApellido(apellidoField.getValue());
 
         // Guardamos el empleado
-        repository.save(currentEmpleado);
+        empleadoService.save(currentEmpleado);
 
         // Actualizamos la lista y cerramos el formulario
         updateList();
@@ -218,13 +202,12 @@ public class EmpleadoCrudView extends VerticalLayout {
     }
 
 
-    private void
-    confirmDelete(Empleado empleado) {
+    private void eliminarForm(Empleado empleado) {
         confirmDialog.removeAll();
         confirmDialog.add("¿Está seguro de que desea eliminar este empleado?");
 
         Button confirmButton = new Button("Sí", event -> {
-            repository.delete(empleado);
+            empleadoService.deleteById(empleado.getId());
             updateList();
             confirmDialog.close();
             notificationShown = false; // Reset para permitir nuevas notificaciones
@@ -240,7 +223,7 @@ public class EmpleadoCrudView extends VerticalLayout {
     }
 
     private void updateList() {
-        grid.setItems(repository.findAll());
+        grid.setItems(empleadoService.findAll());
     }
 
     private void filterList(String searchTerm) {
@@ -258,8 +241,6 @@ public class EmpleadoCrudView extends VerticalLayout {
 
 
     private void buscarDatosPorDNI(String dni) {
-
-
         if (dni.length() == 8) {
             try {
                 String responseData = apiSunatService.consultarDocumento(dni); // Llamar al Service

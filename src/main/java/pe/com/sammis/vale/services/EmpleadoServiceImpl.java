@@ -37,9 +37,6 @@ public class EmpleadoServiceImpl implements IEmpleadoService {
         return empleadoRepository.findById(id).map(emp -> {
             emp.setNombre(empleado.getNombre());
             emp.setApellido(empleado.getApellido());
-
-
-
             return empleadoRepository.save(emp);
         }).orElseThrow(() -> new IllegalArgumentException("Empleado no encontrado con ID: " + id));
     }
@@ -48,5 +45,10 @@ public class EmpleadoServiceImpl implements IEmpleadoService {
     @Override
     public void deleteById(Long id) {
         empleadoRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<Empleado> findByDni(String dni) {
+        return empleadoRepository.findByDni(dni);
     }
 }

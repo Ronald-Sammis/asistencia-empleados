@@ -12,6 +12,7 @@ public interface IEmpleadoService {
     Empleado save(Empleado empleado);
     Empleado update(Long id, Empleado empleado);
     void deleteById(Long id);
+    Optional<Empleado> findByDni(String dni);
 }
 
 
