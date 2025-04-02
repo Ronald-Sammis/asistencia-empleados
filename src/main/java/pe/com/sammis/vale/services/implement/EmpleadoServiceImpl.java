@@ -1,9 +1,9 @@
-package pe.com.sammis.vale.services;
+package pe.com.sammis.vale.services.implement;
 
 import org.springframework.stereotype.Service;
 import pe.com.sammis.vale.models.Empleado;
 import pe.com.sammis.vale.repositories.EmpleadoRepository;
-import pe.com.sammis.vale.services.IEmpleadoService;
+import pe.com.sammis.vale.services.Interfaces.IEmpleadoService;
 
 import java.util.List;
 import java.util.Optional;
