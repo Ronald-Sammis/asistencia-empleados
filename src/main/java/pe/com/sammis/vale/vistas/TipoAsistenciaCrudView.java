@@ -7,8 +7,10 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Input;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -20,7 +22,7 @@ import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 import pe.com.sammis.vale.models.TipoAsistencia;
-import pe.com.sammis.vale.services.Interfaces.ITipoAsistenciaService;
+import pe.com.sammis.vale.repositories.TipoAsistenciaRepository;
 
 @CssImport("./themes/mi-tema/styles.css")
 @Route(value = "tipo", layout = MainLayout.class)
@@ -28,6 +30,8 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
 
     private Grid<TipoAsistencia> grid = new Grid<>(TipoAsistencia.class);
     private Button addButton = new Button( "Nuevo");
+    private TipoAsistenciaRepository repository;
+
     private Dialog formDialog = new Dialog();
     private Dialog confirmDialog = new Dialog();
     private TextField nombreField = new TextField("Nombre");
@@ -35,17 +39,16 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
     private Input colorPicker = new Input();
     private Button saveButton = new Button("Guardar");
     private Button cancelButton = new Button("Cancelar");
-    private ITipoAsistenciaService tipoAsistenciaService;
-    private boolean notificationShown = false;
     private TipoAsistencia currentTipoAsistencia;
-
+    private boolean notificationShown = false;
 
     private TextField searchField = new TextField();
 
     @Autowired
-    public TipoAsistenciaCrudView(ITipoAsistenciaService tipoAsistenciaService) {
+    public TipoAsistenciaCrudView(TipoAsistenciaRepository repository) {
         addClassName("main-view");
-        this.tipoAsistenciaService = tipoAsistenciaService; // Usa el servicio correctamente
+
+        this.repository = repository;
         add(new H2("Tipos de asistencia"));
 
         configureColorPicker();
@@ -188,7 +191,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
             String color = colorHexField.getValue();  // No hacer ningún cambio ni manipulación
             currentTipoAsistencia.setColorHex(color); // Guardar el valor tal cual
 
-            tipoAsistenciaService.save(currentTipoAsistencia);
+            repository.save(currentTipoAsistencia);
             updateList();
             formDialog.close();
             notificationShown = false;
@@ -207,7 +210,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
         confirmDialog.add("¿Está seguro de que desea eliminar este tipo de asistencia?");
 
         Button confirmButton = new Button("Sí", event -> {
-            tipoAsistenciaService.deleteById(tipoAsistencia.getId());
+            repository.delete(tipoAsistencia);
             updateList();
             confirmDialog.close();
             Notification.show("Tipo de asistencia eliminado: " + tipoAsistencia.getNombre().toUpperCase(), 3000, Notification.Position.BOTTOM_CENTER)
@@ -221,7 +224,7 @@ public class TipoAsistenciaCrudView extends VerticalLayout {
     }
 
     private void updateList() {
-        grid.setItems(tipoAsistenciaService.findAll());
+        grid.setItems(repository.findAll());
     }
 
     private void filterList(String searchTerm) {

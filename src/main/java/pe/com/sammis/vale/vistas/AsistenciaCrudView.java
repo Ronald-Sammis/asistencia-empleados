@@ -41,8 +41,8 @@ public class AsistenciaCrudView extends VerticalLayout {
     private final TipoAsistenciaRepository tipoAsistenciaRepository;
 
     private final Grid<LocalDate> grid = new Grid<>(LocalDate.class, false);
-    private final DatePicker datePicker = new DatePicker();
-    private final Button addButton = new Button("Nuevo");
+    private final DatePicker fechaPicker = new DatePicker();
+    private final Button nuevoButton = new Button("Nuevo");
 
     public AsistenciaCrudView(AsistenciaRepository asistenciaRepository,
                               EmpleadoRepository empleadoRepository,
@@ -53,22 +53,22 @@ public class AsistenciaCrudView extends VerticalLayout {
         this.tipoAsistenciaRepository = tipoAsistenciaRepository;
 
         add(new H2("Registro de asistencias"));
-        configureToolbar();
-        configureGrid();
+        configurarBarraHerramientas();
+        configurarGrid();
         add(grid);
         actualizarGrid();
     }
 
-    private void configureToolbar() {
-        datePicker.setValue(LocalDate.now());
-        datePicker.setWidth("125px");
-        addButton.addClickListener(e -> registerForm(datePicker.getValue()));
-        addButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        addButton.setWidth("75px");
-        add(new HorizontalLayout(datePicker, addButton));
+    private void configurarBarraHerramientas() {
+        fechaPicker.setValue(LocalDate.now());
+        fechaPicker.setWidth("125px");
+        nuevoButton.addClickListener(e -> abrirModalRegistrar(fechaPicker.getValue()));
+        nuevoButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        nuevoButton.setWidth("75px");
+        add(new HorizontalLayout(fechaPicker, nuevoButton));
     }
 
-    private void configureGrid() {
+    private void configurarGrid() {
         configureGridProperties();
         addDataColumns();
         addActionColumns();
@@ -114,22 +114,40 @@ public class AsistenciaCrudView extends VerticalLayout {
     }
 
 
-    private void registerForm(LocalDate fecha) {
+    private void abrirModalRegistrar(LocalDate fecha) {
+        // Verificar si la fecha ya está registrada
+        boolean fechaExistente = asistenciaRepository.findByFecha(fecha).size() > 0;
+        if (fechaExistente) {
+            Notification.show("Ya existe un registro de asistencia para esta fecha.", 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
 
-        if (!validateDate(fecha)) return;
-        if (!validateEmployeesAndAttendanceTypes()) return;
-
+        if (fecha.isAfter(LocalDate.now())) {
+            Notification.show("No se puede registrar asistencia para una fecha futura.", 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
 
         List<TipoAsistencia> tiposAsistencia = tipoAsistenciaRepository.findAll();
         List<Empleado> empleados = empleadoRepository.findAll();
 
+        if (tiposAsistencia.isEmpty() || empleados.isEmpty()) {
+            Notification.show("Debe existir al menos un empleado y un tipo de asistencia para registrar asistencia.", 3000, Notification.Position.BOTTOM_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
 
         Dialog modal = new Dialog();
-        modal.setWidth("425px");
+        modal.setWidth("400px");
 
         Grid<Empleado> empleadoGrid = new Grid<>(Empleado.class, false);
         empleadoGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
         empleadoGrid.setItems(empleados);
+        empleadoGrid.getStyle()
+                .set("margin", "0")  // Elimina márgenes
+                .set("padding", "0") // Elimina padding
+                .set("width", "100%"); // Asegura que ocupe todo el ancho disponible
 
         Map<Empleado, ComboBox<TipoAsistencia>> asistenciaMap = new HashMap<>();
 
@@ -138,8 +156,8 @@ public class AsistenciaCrudView extends VerticalLayout {
                     ComboBox<TipoAsistencia> select = new ComboBox<>();
                     select.setItems(tiposAsistencia);
                     select.setItemLabelGenerator(TipoAsistencia::getNombre);
-                    select.setWidth("140px");
-
+                    select.setWidth("100PX");
+                    select.getStyle().set("border-radius", "30px");
 
                     TipoAsistencia sinRegistro = tiposAsistencia.stream()
                             .filter(t -> "SIN_REGISTRO".equals(t.getNombre()))
@@ -189,26 +207,18 @@ public class AsistenciaCrudView extends VerticalLayout {
                 asistenciaMap.values().forEach(select -> select.setValue(tipo));
             });
         });
+        todosPuntualButton.getStyle().set("background", "#0eb90e");
+        todosPuntualButton.getStyle().set("color", "white");
 
-
-        String colorHexPuntual = tiposAsistencia.stream()
-                .filter(t -> "PUNTUAL".equals(t.getNombre()))
-                .map(TipoAsistencia::getColorHex)
-                .findFirst()
-                .orElse("");
-
-        todosPuntualButton.getStyle().set("background",colorHexPuntual).set("color",getContrastingTextColor(colorHexPuntual));
-
-
-        Button noRecordButton  = new Button("Quitar", e -> {
+        Button sinRegistroButton = new Button("Quitar", e -> {
             tiposAsistencia.stream().filter(t -> "SIN_REGISTRO".equals(t.getNombre())).findFirst().ifPresent(tipo -> {
                 asistenciaMap.values().forEach(select -> select.setValue(tipo));
             });
         });
-        noRecordButton.getStyle().set("background", "#808080");
-        noRecordButton.getStyle().set("color", "white");
+        sinRegistroButton.getStyle().set("background", "#808080");
+        sinRegistroButton.getStyle().set("color", "white");
 
-        Button saveButton = new Button("Guardar", e -> {
+        Button guardarButton = new Button("Guardar", e -> {
             asistenciaMap.forEach((empleado, comboBox) -> {
                 TipoAsistencia tipoSeleccionado = comboBox.getValue();
                 if (tipoSeleccionado != null) {
@@ -223,11 +233,11 @@ public class AsistenciaCrudView extends VerticalLayout {
             modal.close();
             actualizarGrid();
         });
-        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        guardarButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        Button closeButton = new Button("Cerrar", e -> modal.close());
+        Button cerrarButton = new Button("Cerrar", e -> modal.close());
 
-        HorizontalLayout toolbarModal = new HorizontalLayout(todosPuntualButton, noRecordButton, saveButton, closeButton);
+        HorizontalLayout toolbarModal = new HorizontalLayout(todosPuntualButton, sinRegistroButton, guardarButton, cerrarButton);
         toolbarModal.setWidthFull();
 
         VerticalLayout modalLayout = new VerticalLayout(toolbarModal, empleadoGrid);
@@ -237,8 +247,6 @@ public class AsistenciaCrudView extends VerticalLayout {
         modal.add(modalLayout);
         modal.open();
     }
-
-
 
 
 
@@ -357,41 +365,6 @@ public class AsistenciaCrudView extends VerticalLayout {
     private void updateList() {
         grid.setItems(asistenciaRepository.findDistinctFechas());
     }
-
-    private boolean validateDate(LocalDate fecha) {
-        // Validación si la fecha ya está registrada
-        if (asistenciaRepository.findByFecha(fecha).size() > 0) {
-            showErrorNotification("Ya existe un registro de asistencia para esta fecha.");
-            return false;
-        }
-
-        // Validación si la fecha es futura
-        if (fecha.isAfter(LocalDate.now())) {
-            showErrorNotification("No se puede registrar asistencia para una fecha futura.");
-            return false;
-        }
-
-
-
-        return true;
-    }
-
-    private boolean validateEmployeesAndAttendanceTypes() {
-        List<TipoAsistencia> tiposAsistencia = tipoAsistenciaRepository.findAll();
-        List<Empleado> empleados = empleadoRepository.findAll();
-
-        if (tiposAsistencia.isEmpty() || empleados.isEmpty()) {
-            showErrorNotification("Debe existir al menos un empleado y un tipo de asistencia para registrar asistencia.");
-            return false;
-        }
-        return true;
-    }
-
-    private void showErrorNotification(String message) {
-        Notification.show(message, 3000, Notification.Position.BOTTOM_CENTER)
-                .addThemeVariants(NotificationVariant.LUMO_ERROR);
-    }
-
 
 
 }

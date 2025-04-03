@@ -1,4 +1,4 @@
-package pe.com.sammis.vale.services.Interfaces;
+package pe.com.sammis.vale.services;
 
 import pe.com.sammis.vale.models.Empleado;
 
