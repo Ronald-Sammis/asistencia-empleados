@@ -14,7 +14,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
-import org.springframework.beans.factory.annotation.Autowired;
 import pe.com.sammis.vale.controllers.EmpleadoController;
 import pe.com.sammis.vale.models.Empleado;
 import pe.com.sammis.vale.services.Interfaces.IEmpleadoService;
@@ -37,16 +36,17 @@ public class EmpleadoView extends VerticalLayout {
     private final Button cancelButton = new Button("Cancelar", VaadinIcon.CLOSE.create());
     private final EmpleadoController controller;
 
-    @Autowired
     public EmpleadoView(IEmpleadoService empleadoService, APISunatServiceImpl apiSunatService) {
         addClassName("main-view");
-        this.controller = new EmpleadoController(empleadoService, apiSunatService, this);
+        controller = new EmpleadoController(empleadoService, apiSunatService, this);
 
+        // Inicializar UI
         add(new H2("Registro de empleados"));
         configureGrid();
         configureToolbar();
         configureForm();
 
+        // Actualizar la lista al iniciar
         controller.updateList();
     }
 
@@ -54,7 +54,7 @@ public class EmpleadoView extends VerticalLayout {
         configureSearchField();
         configureAddButton();
         HorizontalLayout toolbar = new HorizontalLayout(addButton, searchField);
-        toolbar.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN); // Separa los elementos a los extremos
+        toolbar.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN); // Separar elementos
         add(toolbar, grid);
     }
 
@@ -73,11 +73,9 @@ public class EmpleadoView extends VerticalLayout {
     private void configureGrid() {
         grid.setWidth("525px");
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
-        grid.setColumns();
-        grid.addColumn("dni").setAutoWidth(true);
+        grid.setColumns("dni", "nombre");
         grid.addColumn(empleado -> empleado.getNombre() + " " + empleado.getApellido())
                 .setHeader("Nombres").setAutoWidth(true);
-
         grid.addComponentColumn(this::createEditButton)
                 .setHeader("Editar").setAutoWidth(true);
         grid.addComponentColumn(this::createDeleteButton)
@@ -87,13 +85,10 @@ public class EmpleadoView extends VerticalLayout {
     private Button createEditButton(Empleado empleado) {
         Button editButton = new Button("Editar", VaadinIcon.PENCIL.create());
         editButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_SMALL);
-        // Pasa el objeto empleado al controlador
         editButton.addClickListener(e -> controller.editarEmpleado(empleado));
         return editButton;
     }
 
-
-    // Método para crear el botón de eliminación en la vista
     private Button createDeleteButton(Empleado empleado) {
         Button deleteButton = new Button("Eliminar", VaadinIcon.TRASH.create());
         deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_SMALL);
@@ -113,9 +108,6 @@ public class EmpleadoView extends VerticalLayout {
                 new HorizontalLayout(saveButton, cancelButton));
         formDialog.add(formLayout);
     }
-
-
-
 
     public void updateList() {
         grid.setItems(controller.findAllEmpleados());
@@ -167,6 +159,4 @@ public class EmpleadoView extends VerticalLayout {
     public void setApellidoField(String apellido) {
         apellidoField.setValue(apellido != null ? apellido : "");
     }
-
-
 }
