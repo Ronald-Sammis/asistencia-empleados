@@ -40,7 +40,7 @@ public class MainLayout extends AppLayout {
 
         // Links de navegación
         RouterLink portalView = new RouterLink("MainView", MainView.class);
-        RouterLink empleadoView = new RouterLink("Registro de empleados", EmpleadoCrudView.class);
+
         RouterLink asistenciaView = new RouterLink("Registro de asistencias", AsistenciaCrudView.class);
         RouterLink tipoView = new RouterLink("Tipos de asistencia", TipoAsistenciaCrudView.class);
         RouterLink empleadoView2 = new RouterLink("Registro de empleados 2", EmpleadoView.class);
@@ -49,7 +49,7 @@ public class MainLayout extends AppLayout {
 
 
 
-        sidebar.add(empleadoView, portalView, tipoView,asistenciaView,empleadoView2);
+        sidebar.add( portalView, tipoView,asistenciaView,empleadoView2);
 
         addToDrawer(sidebar);
     }
