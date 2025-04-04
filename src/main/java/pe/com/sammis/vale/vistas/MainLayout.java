@@ -43,9 +43,13 @@ public class MainLayout extends AppLayout {
         RouterLink empleadoView = new RouterLink("Registro de empleados", EmpleadoCrudView.class);
         RouterLink asistenciaView = new RouterLink("Registro de asistencias", AsistenciaCrudView.class);
         RouterLink tipoView = new RouterLink("Tipos de asistencia", TipoAsistenciaCrudView.class);
+        RouterLink empleadoView2 = new RouterLink("Registro de empleados 2", EmpleadoView.class);
 
 
-        sidebar.add(empleadoView, portalView, tipoView,asistenciaView);
+
+
+
+        sidebar.add(empleadoView, portalView, tipoView,asistenciaView,empleadoView2);
 
         addToDrawer(sidebar);
     }

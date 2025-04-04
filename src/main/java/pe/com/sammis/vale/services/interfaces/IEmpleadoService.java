@@ -1,4 +1,4 @@
-package pe.com.sammis.vale.services;
+package pe.com.sammis.vale.services.interfaces;
 
 import pe.com.sammis.vale.models.Empleado;
 
@@ -13,6 +13,7 @@ public interface IEmpleadoService {
     Empleado update(Long id, Empleado empleado);
     void deleteById(Long id);
     Optional<Empleado> findByDni(String dni);
+    String consultaSunat(String dni);
 }
 
 

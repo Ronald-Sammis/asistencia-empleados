@@ -23,7 +23,7 @@ public class Empleado {
     @Column(nullable = false, length = 8, unique = true)
     private String dni;
 
-    @OneToMany(mappedBy = "empleado", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "empleado", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private List<Asistencia> asistencias;
 
     public Empleado() {
